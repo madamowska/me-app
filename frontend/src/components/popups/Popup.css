@@ -1,0 +1,381 @@
+/* src/components/Popup.css */
+
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: overlayIn 0.2s ease;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.popup-content {
+  width: 380px;
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  position: relative;
+
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  box-shadow: var(--glow-surface);
+
+  animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 90vh;
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+.popup-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+}
+
+.popup-content h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.popup-actions {
+  margin-top: var(--space-sm);
+}
+
+.popup-actions-row {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* ── Form fields ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.field label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.field input[type="text"],
+.field textarea {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  padding: var(--space-sm) 12px;
+  outline: none;
+  resize: none;
+  transition: var(--transition);
+}
+
+.field input[type="text"]:focus,
+.field textarea:focus {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--glow-accent-sm);
+}
+
+.field textarea { min-height: 80px; }
+
+/* ── Rich text editor ── */
+.rich-textarea {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: var(--space-sm) 12px;
+  min-height: 80px;
+  outline: none;
+  transition: var(--transition);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rich-textarea:focus {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--glow-accent-sm);
+}
+
+.rich-textarea:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.rich-hint {
+  font-size: 0.62rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+}
+
+.rich-accent {
+  color: var(--color-accent);
+  text-shadow: var(--glow-accent-sm);
+}
+
+.rich-display {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+}
+
+.rich-display .rich-accent {
+  color: var(--color-accent);
+  text-shadow: var(--glow-accent-sm);
+}
+
+/* ── Goal input row ── */
+.goal-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.goal-input-row input[type="text"] {
+  flex: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  padding: var(--space-sm) 12px;
+  outline: none;
+  transition: var(--transition);
+}
+
+.goal-input-row input[type="text"]:focus {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--glow-accent-sm);
+}
+
+.goal-add-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  background: var(--color-accent-dim);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goal-add-btn:hover {
+  box-shadow: var(--glow-accent-sm);
+}
+
+/* ── Goal list ── */
+.goal-list {
+  list-style: none;
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  transition: border-color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+}
+
+.goal-item-text {
+  flex: 1;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ── Drag handle ── */
+.goal-drag-handle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  opacity: 0.4;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+  user-select: none;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none; /* required for pointer events on mobile */
+}
+
+.goal-item--draggable:hover .goal-drag-handle {
+  opacity: 0.8;
+}
+
+/* Item being dragged */
+.goal-item--dragging {
+  opacity: 0.35;
+  border-color: var(--color-accent-border);
+}
+
+/* Drop target */
+.goal-item--drag-over {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-dim);
+  box-shadow: var(--glow-accent-sm);
+}
+
+.goal-remove-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 0 2px;
+  opacity: 0.5;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.goal-remove-btn:hover {
+  opacity: 1;
+  color: var(--color-danger);
+}
+
+/* ── Tickable goals (view mode) ── */
+.goal-item--ticking { cursor: pointer; }
+
+.goal-item--ticking:hover {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-dim);
+}
+
+.goal-item--done .goal-item-text {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.goal-item--done {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-dim);
+  opacity: 0.6;
+}
+
+.goal-tick {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  color: var(--color-accent);
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.goal-item--done .goal-tick {
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent-border);
+  box-shadow: var(--glow-accent-sm);
+}
+
+/* ── Goal progress badge ── */
+.goal-progress-label {
+  font-size: 0.65rem;
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-pill);
+  padding: 1px 8px;
+  font-family: var(--font-serif);
+}
+
+/* ── Detail view ── */
+.detail-field { margin-bottom: var(--space-sm); }
+
+.detail-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.detail-value {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+/* ── Delete confirmation overlay ── */
+.confirm-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  z-index: 10;
+  animation: popIn 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.confirm-overlay p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.confirm-overlay strong {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}

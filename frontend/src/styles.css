@@ -1,0 +1,155 @@
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root {
+  /* Colors */
+  --color-bg:            #000000;
+  --color-surface:       rgba(8, 8, 12, 0.97);
+  --color-surface-hover: rgba(255, 255, 255, 0.1);
+  --color-border:        rgba(255, 255, 255, 0.2);
+  --color-border-hover:  rgba(255, 255, 255, 0.5);
+  --color-text:          #ffffff;
+  --color-text-muted:    rgba(255, 255, 255, 0.45);
+  --color-accent:        rgba(87, 154, 196, 1);
+  --color-accent-dim:    rgba(87, 154, 196, 0.1);
+  --color-accent-border: rgba(87, 154, 196, 0.5);
+  --color-danger:        rgba(255, 100, 100, 0.7);
+  --color-danger-border: rgba(255, 80, 80, 0.3);
+  --color-danger-glow:   rgba(255, 80, 80, 0.2);
+  --color-overlay:       rgba(0, 0, 0, 0.88);
+
+  /* Glows */
+  --glow-white-sm:  0 0 10px rgba(255, 255, 255, 0.2),  0 0 25px rgba(180, 200, 255, 0.15);
+  --glow-white-md:  0 0 20px rgba(255, 255, 255, 0.4),  0 0 40px rgba(180, 200, 255, 0.25);
+  --glow-surface:   0 0 20px rgba(255, 255, 255, 0.08), 0 0 80px rgba(160, 180, 255, 0.1);
+  --glow-accent-sm: 0 0 8px  rgba(87, 154, 196, 0.3);
+  --glow-accent-md: 0 0 20px rgba(87, 154, 196, 0.25);
+  --glow-danger-sm: 0 0 10px rgba(255, 80, 80, 0.2);
+
+  /* Typography */
+  --font-serif: 'Georgia', serif;
+
+  /* Spacing — 4px base scale */
+  --space-xs:  6px;
+  --space-sm:  10px;
+  --space-md:  18px;
+  --space-lg:  28px;
+  --space-xl:  36px;
+
+  /* Radii */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-pill: 30px;
+
+  /* Transitions */
+  --transition: all 0.3s ease;
+}
+
+/* ═══════════════════════════════════════
+   GLOBAL RESET
+═══════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-serif);
+}
+
+/* ═══════════════════════════════════════
+   BUTTON
+   Base class: .btn
+   Variants:   .btn--accent  .btn--danger  .btn--icon
+   Sizes:      .btn--sm  (default is md)
+   Modifiers:  .btn--full
+═══════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  padding: 8px 20px;
+  font-family: var(--font-serif);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+/* Size: small — used in popup action rows */
+.btn--sm {
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  letter-spacing: 0.07em;
+}
+
+/* Variant: accent */
+.btn--accent {
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-dim);
+}
+
+.btn--accent:hover {
+  background: rgba(87, 154, 196, 0.25);
+  border-color: var(--color-accent);
+  box-shadow: var(--glow-accent-md);
+}
+
+/* Variant: danger */
+.btn--danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+  background: transparent;
+}
+
+.btn--danger:hover {
+  color: rgba(255, 100, 100, 1);
+  border-color: rgba(255, 80, 80, 0.7);
+  box-shadow: var(--glow-danger-sm);
+  background: transparent;
+}
+
+/* Variant: icon-only (close ✕ etc.) */
+.btn--icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.6);
+  border-color: transparent;
+}
+
+.btn--icon:hover {
+  color: var(--color-text);
+  border-color: transparent;
+  background: var(--color-surface-hover);
+}
+
+/* Modifier: full width */
+.btn--full {
+  width: 100%;
+  border-radius: var(--radius-sm);
+}

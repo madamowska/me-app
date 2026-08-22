@@ -1,0 +1,79 @@
+.hero {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.orbit-system {
+  position: relative;
+  width: 420px;
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 800px;
+}
+
+.orbit {
+  position: absolute;
+  width: 80px;
+  height: 110px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  transform: rotateX(30deg);
+  box-shadow:
+    0 0 10px rgba(255, 255, 255, 0.20),
+    0 0 30px rgba(200, 200, 255, 0.10);
+}
+
+.orbit-1 {
+  animation: spin 10s linear infinite;
+  animation-delay: 0s;
+}
+
+.orbit-2 {
+  animation: spin 10s reverse linear infinite;
+  animation-delay: -3s;
+}
+
+.orbit-3 {
+  animation: spin 10s linear infinite;
+  animation-delay: -3s;
+}
+
+.orbit-4 {
+  animation: spin 10s reverse linear infinite;
+  animation-delay: 0s;
+}
+
+@keyframes spin {
+  from { transform: rotateX(30deg) rotateZ(0deg); }
+  to   { transform: rotateX(30deg) rotateZ(360deg); }
+}
+
+.center-label {
+  position: relative;
+  z-index: 10;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: 'Georgia', serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: #fff;
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.8),
+    0 0 30px rgba(200, 210, 255, 0.5),
+    0 0 60px rgba(180, 200, 255, 0.25);
+  cursor: pointer;
+  user-select: none;
+}
+
+.center-label:hover {
+  opacity: 0.9;
+}

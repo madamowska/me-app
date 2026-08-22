@@ -1,0 +1,43 @@
+.dashboard-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  background: #000;
+  color: #fff;
+  font-family: Georgia, serif;
+  padding: 2rem 2rem 2rem 5.5rem;
+}
+
+.dashboard-shell {
+  width: min(760px, 80vw);
+  margin-top: 0.5rem;
+}
+
+.activity-card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 110px;
+  padding: 1rem 1.25rem;
+  gap: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.04);
+}
+
+.activity-label {
+  min-width: 130px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  opacity: 0.85;
+}
+
+.activity-value {
+  flex: 1;
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.5;
+}
