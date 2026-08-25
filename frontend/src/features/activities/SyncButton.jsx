@@ -10,7 +10,7 @@ const STATUS = {
   ERROR: 'error',
 }
 
-export default function SyncButton() {
+export default function SyncButton({ onSuccess }) {
   const [status, setStatus] = useState(STATUS.IDLE)
   const [message, setMessage] = useState('')
 
@@ -26,6 +26,9 @@ export default function SyncButton() {
           ? `Synced ${result.upserted} new activit${result.upserted === 1 ? 'y' : 'ies'}.`
           : 'Already up to date.'
       )
+
+      // notify parent that sync succeeded so it can refresh data
+      if (typeof onSuccess === 'function') onSuccess(result)
     } catch (err) {
       setStatus(STATUS.ERROR)
       setMessage(err.message || 'Sync failed.')

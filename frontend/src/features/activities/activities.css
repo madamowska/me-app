@@ -18,3 +18,50 @@
 .sync-message--error {
   color: var(--color-danger);
 }
+
+.last-activity-card {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.04);
+}
+
+.last-activity-empty {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.last-activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-serif);
+}
+
+.last-activity-table th {
+  text-align: left;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: 0 12px 0 0;
+  font-weight: normal;
+}
+
+.last-activity-table td {
+  padding: 4px 12px 0 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+.last-activity-table td:first-child,
+.last-activity-table th:first-child {
+  white-space: normal;
+}
+
+.last-activity-title {
+  margin: 0 0 1rem 0; /* single empty line below the heading */
+}

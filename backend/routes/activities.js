@@ -17,7 +17,11 @@ router.get('/last-activity', async (req, res) => {
     const supabase = getSupabaseAdmin()
     const { data, error } = await supabase
       .from('activities')
-      .select('activity_name, activity_type, start_time, duration_seconds')
+      .select(
+        'activity_name, activity_type, start_time, duration_seconds, distance_m, ' +
+        'avg_speed_mps, calories, avg_heart_rate, max_heart_rate, ' +
+        'aerobic_training_effect, anaerobic_training_effect'
+      )
       .eq('profile_id', profileId)
       .order('start_time', { ascending: false })
       .limit(1)
@@ -25,23 +29,7 @@ router.get('/last-activity', async (req, res) => {
 
     if (error) throw error
 
-    if (!data) {
-      return res.json({ message: 'No activities found yet.' })
-    }
-
-    const durationLabel = data.duration_seconds
-      ? `${Math.round(data.duration_seconds / 60)} min`
-      : '--'
-    const dateLabel = data.start_time
-      ? new Date(data.start_time).toLocaleDateString()
-      : ''
-
-    res.json({
-      type: data.activity_type,
-      duration: durationLabel,
-      date: dateLabel,
-      message: `${data.activity_name || data.activity_type || 'Activity'} • ${durationLabel} • ${dateLabel}`,
-    })
+    res.json({ activity: data || null })
   } catch (err) {
     console.error('Failed to fetch last activity:', err)
     res.status(500).json({ error: 'Failed to fetch last activity.' })

@@ -6,7 +6,7 @@ import { getLastActivity } from './api'
 import { formatDistanceKm, formatSpeed, formatDate } from './activityFormat'
 import './activities.css'
 
-export default function LastActivityCard() {
+export default function LastActivityCard({ refreshKey }) {
   const [activity, setActivity] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -17,6 +17,11 @@ export default function LastActivityCard() {
 
     async function load() {
       try {
+        if (!cancelled) {
+          setLoading(true)
+          setError(null)
+        }
+
         const data = await getLastActivity()
         if (!cancelled) setActivity(data)
       } catch (err) {
@@ -29,7 +34,7 @@ export default function LastActivityCard() {
 
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [refreshKey])
 
   if (loading) {
     return <div className="last-activity-card">Loading...</div>
@@ -45,15 +50,18 @@ export default function LastActivityCard() {
     )
   }
 
+  const isRunning = typeof activity?.activity_type === 'string' && activity.activity_type.toLowerCase().includes('running')
+
   return (
     <>
       <div className="last-activity-card">
+        <h3 className="last-activity-title">Last Activity</h3>
         <table className="last-activity-table">
           <thead>
             <tr>
               <th>Name</th>
               <th>Distance</th>
-              <th>Speed</th>
+              <th>{isRunning ? 'Pace' : 'Speed'}</th>
               <th>Date</th>
               <th aria-hidden="true" />
             </tr>
