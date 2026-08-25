@@ -105,7 +105,13 @@ def sync_activities(days: int = 365) -> None:
 
 
 if __name__ == '__main__':
+    import json
+
     parser = argparse.ArgumentParser(description='Sync Garmin activities into Supabase.')
-    parser.add_argument('--days', type=int, default=365, help='Days back to sync (default: 365)')
+    parser.add_argument(
+        '--days', type=int, default=None,
+        help='Force a specific lookback window. Omit for incremental sync since last run.'
+    )
     args = parser.parse_args()
-    sync_activities(days=args.days)
+    result = sync_activities(days=args.days)
+    print(f'SYNC_RESULT_JSON:{json.dumps(result)}')

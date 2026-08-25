@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import './styles.css'
 
-import Home from './pages/Home'
-import Dashboard from './pages/Dashboard'
-import HamburgerButton from './components/HamburgerButton'
-import Sidebar from './components/Sidebar'
+import Home from './pages/Home/Home'
+import Dashboard from './pages/Dashboard/Dashboard'
+import HamburgerButton from './components/layout/HamburgerButton'
+import Sidebar from './components/layout/Sidebar'
 import SettingsPopup from './components/popups/SettingsPopup'
 
 export default function App() {
