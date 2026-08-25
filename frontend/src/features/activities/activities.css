@@ -1,0 +1,20 @@
+.sync-button-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: var(--space-md);
+}
+
+.sync-message {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.sync-message--success {
+  color: var(--color-accent);
+}
+
+.sync-message--error {
+  color: var(--color-danger);
+}

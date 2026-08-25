@@ -2,21 +2,26 @@ import argparse
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from garminconnect import GarminConnectAuthenticationError, GarminConnectConnectionError
 
 from backend.garmin.client import get_client
 from backend.lib.supabase_client import get_supabase
 
 BATCH_SIZE = 200
+SYNC_SOURCE = 'garmin'
+FIRST_RUN_LOOKBACK_DAYS = 365
+OVERLAP_DAYS = 1
 ENV_PATH = Path(__file__).resolve().parent.parent.parent / '.env'
+
 
 def _safe_int(value):
     return int(value) if value is not None else None
 
 
 def _to_record(activity: dict, profile_id: str) -> dict:
+    """Map a garminconnect activity dict to a public.activities row."""
     return {
         'profile_id': profile_id,
         'garmin_activity_id': activity.get('activityId'),
@@ -30,6 +35,8 @@ def _to_record(activity: dict, profile_id: str) -> dict:
         'max_heart_rate': _safe_int(activity.get('maxHR')),
         'avg_speed_mps': activity.get('averageSpeed'),
         'max_speed_mps': activity.get('maxSpeed'),
+        'aerobic_training_effect': activity.get('aerobicTrainingEffect'),
+        'anaerobic_training_effect': activity.get('anaerobicTrainingEffect'),
         'raw_data': activity,
     }
 
@@ -39,29 +46,59 @@ def _chunks(items, size):
         yield items[i:i + size]
 
 
-def sync_activities(days: int = 365) -> None:
+def _get_last_synced_at(supabase) -> datetime | None:
+    result = (
+        supabase.table('garmin_sync_state')
+        .select('last_synced_at')
+        .eq('source', SYNC_SOURCE)
+        .limit(1)
+        .execute()
+    )
+    if not result.data:
+        return None
+    return datetime.fromisoformat(result.data[0]['last_synced_at'])
+
+
+def _resolve_start_date(supabase, days_override: int | None) -> date:
+    if days_override is not None:
+        return date.today() - timedelta(days=days_override)
+
+    last_synced_at = _get_last_synced_at(supabase)
+    if last_synced_at is None:
+        print(f'No previous sync found — defaulting to {FIRST_RUN_LOOKBACK_DAYS} days back.')
+        return date.today() - timedelta(days=FIRST_RUN_LOOKBACK_DAYS)
+
+    return last_synced_at.date() - timedelta(days=OVERLAP_DAYS)
+
+
+def sync_activities(days: int | None = None) -> dict:
+    """Returns a summary dict — useful both for CLI printing and for an API caller."""
     load_dotenv(dotenv_path=ENV_PATH)
+
     profile_id = os.getenv('GARMIN_PROFILE_ID')
     if not profile_id:
-        print('[config error] GARMIN_PROFILE_ID not set in .env.')
-        return
+        msg = f'GARMIN_PROFILE_ID not set. Checked: {ENV_PATH}'
+        print(f'[config error] {msg}')
+        return {'success': False, 'error': msg}
 
     try:
         garmin = get_client()
     except RuntimeError as e:
         print(f'[config error] {e}')
-        return
+        return {'success': False, 'error': str(e)}
     except GarminConnectAuthenticationError:
-        print('[auth error] Garmin rejected the credentials in .env.')
-        return
+        msg = 'Garmin rejected the credentials in .env.'
+        print(f'[auth error] {msg}')
+        return {'success': False, 'error': msg}
     except GarminConnectConnectionError as e:
-        print(f'[connection error] Could not reach Garmin Connect: {e}')
-        return
+        msg = f'Could not reach Garmin Connect: {e}'
+        print(f'[connection error] {msg}')
+        return {'success': False, 'error': msg}
 
     supabase = get_supabase()
 
+    start_date = _resolve_start_date(supabase, days)
     end_date = date.today()
-    start_date = end_date - timedelta(days=days)
     print(f'Fetching activities from {start_date} to {end_date}...')
 
     try:
@@ -69,12 +106,14 @@ def sync_activities(days: int = 365) -> None:
             start_date.isoformat(), end_date.isoformat()
         )
     except GarminConnectConnectionError as e:
-        print(f'[connection error] Failed while fetching activities: {e}')
-        return
+        msg = f'Failed while fetching activities: {e}'
+        print(f'[connection error] {msg}')
+        return {'success': False, 'error': msg}
 
     if not activities:
-        print('No activities found in range.')
-        return
+        print('No new activities found.')
+        _update_sync_state(supabase)
+        return {'success': True, 'fetched': 0, 'upserted': 0}
 
     print(f'Fetched {len(activities)} activities. Upserting...')
 
@@ -93,19 +132,25 @@ def sync_activities(days: int = 365) -> None:
         except Exception as e:
             print(f'[db error] Batch failed, skipping: {e}')
 
+    _update_sync_state(supabase)
+
+    print(f'Done. {upserted} rows upserted across {len(records)} fetched activities.')
+    return {'success': True, 'fetched': len(records), 'upserted': upserted}
+
+
+def _update_sync_state(supabase) -> None:
     supabase.table('garmin_sync_state').upsert(
         {
-            'source': 'garmin',
+            'source': SYNC_SOURCE,
             'last_synced_at': datetime.now(timezone.utc).isoformat(),
         },
         on_conflict='source',
     ).execute()
 
-    print(f'Done. {upserted} rows upserted across {len(records)} fetched activities.')
-
 
 if __name__ == '__main__':
     import json
+    import sys
 
     parser = argparse.ArgumentParser(description='Sync Garmin activities into Supabase.')
     parser.add_argument(
@@ -113,5 +158,11 @@ if __name__ == '__main__':
         help='Force a specific lookback window. Omit for incremental sync since last run.'
     )
     args = parser.parse_args()
-    result = sync_activities(days=args.days)
-    print(f'SYNC_RESULT_JSON:{json.dumps(result)}')
+
+    try:
+        result = sync_activities(days=args.days)
+    except Exception as e:
+        print(f'[unexpected error] {e}', file=sys.stderr)
+        result = {'success': False, 'error': str(e)}
+
+    print(f'SYNC_RESULT_JSON:{json.dumps(result)}', flush=True)

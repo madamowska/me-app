@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import './Dashboard.css'
+import SyncButton from '../../features/activities/SyncButton'
+import '../../features/activities/activities.css'
 
 export default function Dashboard() {
   const [lastActivity, setLastActivity] = useState(null)
@@ -41,6 +43,7 @@ export default function Dashboard() {
             {loading ? 'Loading...' : summary}
           </div>
         </div>
+        <SyncButton />
       </div>
     </main>
   )

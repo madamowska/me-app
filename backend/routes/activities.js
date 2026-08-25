@@ -55,9 +55,9 @@ router.post('/sync-activities', (req, res) => {
 
   syncInProgress = true
 
-  // Must be launched with cwd = project root (npm scripts already run from there)
   const python = spawn('python', ['-m', 'backend.garmin.sync_activities'], {
     cwd: process.cwd(),
+    env: { ...process.env, PYTHONUNBUFFERED: '1' },
   })
 
   let stdout = ''
