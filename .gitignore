@@ -2,6 +2,12 @@ node_modules
 dist
 dist-ssr
 .vite
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
 
 # Local environment files
 .env
