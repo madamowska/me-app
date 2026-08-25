@@ -19,8 +19,7 @@ router.get('/last-activity', async (req, res) => {
       .from('activities')
       .select(
         'activity_name, activity_type, start_time, duration_seconds, distance_m, ' +
-        'avg_speed_mps, calories, avg_heart_rate, max_heart_rate, ' +
-        'aerobic_training_effect, anaerobic_training_effect'
+        'avg_speed_mps, calories, avg_heart_rate, max_heart_rate'
       )
       .eq('profile_id', profileId)
       .order('start_time', { ascending: false })

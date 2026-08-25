@@ -35,8 +35,6 @@ def _to_record(activity: dict, profile_id: str) -> dict:
         'max_heart_rate': _safe_int(activity.get('maxHR')),
         'avg_speed_mps': activity.get('averageSpeed'),
         'max_speed_mps': activity.get('maxSpeed'),
-        'aerobic_training_effect': activity.get('aerobicTrainingEffect'),
-        'anaerobic_training_effect': activity.get('anaerobicTrainingEffect'),
         'raw_data': activity,
     }
 
