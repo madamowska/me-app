@@ -69,6 +69,12 @@ export default function SyncButton({ onSuccess }) {
     margin: 0,
   }
 
+  // Ensure the message never wraps; if it's the transient "Already up to date." message
+  // merge the transient positioning with nowrap. Other messages keep nowrap as well.
+  const messageStyle = message === 'Already up to date.'
+    ? { ...transientStyle, whiteSpace: 'nowrap' }
+    : { whiteSpace: 'nowrap' }
+
   return (
     <div className="sync-button-wrap" style={wrapperStyle}>
       <Button
@@ -83,7 +89,7 @@ export default function SyncButton({ onSuccess }) {
         // If the message is the "Already up to date." transient text, center it under the button
         <p
           className={`sync-message sync-message--${status}`}
-          style={message === 'Already up to date.' ? transientStyle : undefined}
+          style={messageStyle}
         >
           {message}
         </p>
