@@ -1,5 +1,5 @@
 // src/features/activities/SyncButton.jsx
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Button from '../../components/ui/Button'
 import { triggerSync } from './api'
 
@@ -13,6 +13,30 @@ const STATUS = {
 export default function SyncButton({ onSuccess }) {
   const [status, setStatus] = useState(STATUS.IDLE)
   const [message, setMessage] = useState('')
+  const transientTimer = useRef(null)
+
+  // Auto-hide the "Already up to date." message after 5 seconds
+  useEffect(() => {
+    // Clear any existing timer when message changes
+    if (transientTimer.current) {
+      clearTimeout(transientTimer.current)
+      transientTimer.current = null
+    }
+
+    if (message === 'Already up to date.') {
+      transientTimer.current = setTimeout(() => {
+        setMessage('')
+        transientTimer.current = null
+      }, 5000)
+    }
+
+    return () => {
+      if (transientTimer.current) {
+        clearTimeout(transientTimer.current)
+        transientTimer.current = null
+      }
+    }
+  }, [message])
 
   async function handleSync() {
     setStatus(STATUS.SYNCING)
@@ -35,8 +59,18 @@ export default function SyncButton({ onSuccess }) {
     }
   }
 
+  // Inline styles used to position the transient message centered under the button
+  const wrapperStyle = { position: 'relative', display: 'inline-block' }
+  const transientStyle = {
+    position: 'absolute',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    top: 'calc(100% + 8px)',
+    margin: 0,
+  }
+
   return (
-    <div className="sync-button-wrap">
+    <div className="sync-button-wrap" style={wrapperStyle}>
       <Button
         variant="accent"
         onClick={handleSync}
@@ -46,7 +80,11 @@ export default function SyncButton({ onSuccess }) {
       </Button>
 
       {message && (
-        <p className={`sync-message sync-message--${status}`}>
+        // If the message is the "Already up to date." transient text, center it under the button
+        <p
+          className={`sync-message sync-message--${status}`}
+          style={message === 'Already up to date.' ? transientStyle : undefined}
+        >
           {message}
         </p>
       )}
