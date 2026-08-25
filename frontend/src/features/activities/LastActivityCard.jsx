@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import Button from '../../components/ui/Button'
 import ActivityDetailsPopup from './ActivityDetailsPopup'
-import SyncButton from './SyncButton'
 import { getLastActivity } from './api'
 import { formatDistanceKm, formatSpeed, formatDate } from './activityFormat'
 import './activities.css'
@@ -42,7 +41,6 @@ export default function LastActivityCard() {
         <p className="last-activity-empty">
           {error ? 'Could not load your last activity.' : 'Your last workout will appear here.'}
         </p>
-        {!error && <SyncButton />}
       </div>
     )
   }
