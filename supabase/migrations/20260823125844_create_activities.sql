@@ -23,9 +23,6 @@ create table public.activities (
     avg_speed_mps numeric,
     max_speed_mps numeric,
 
-    aerobic_training_effect numeric,
-    anaerobic_training_effect numeric,
-
     raw_data jsonb,
 
     created_at timestamptz not null default now(),
