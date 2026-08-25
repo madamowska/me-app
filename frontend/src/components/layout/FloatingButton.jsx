@@ -1,6 +1,6 @@
 // src/components/FloatingButton.jsx
 import { forwardRef } from 'react'
-import Button from './ui/Button'
+import Button from '../ui/Button'
 
 const style = {
   position:       'fixed',
