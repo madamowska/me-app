@@ -9,6 +9,8 @@ const __dirname = dirname(__filename)
 export default defineConfig({
   // Ensure Vite uses the frontend folder as the project root so it can find index.html
   root: __dirname,
+  envDir: '..',
+  envPrefix: ['VITE_', 'SUPABASE_'],
   plugins: [react()],
   server: {
     proxy: {

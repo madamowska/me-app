@@ -1,0 +1,87 @@
+.weekly-distance-chart {
+  position: absolute;
+  left: calc(100% + 20px);
+  top: 0;
+  width: 520px;
+  min-height: 140px;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.75rem 1rem;
+}
+
+.weekly-distance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.weekly-distance-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.weekly-distance-select {
+  appearance: none;
+  background: var(--color-accent-dim);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  padding: 6px 10px;
+  font-family: var(--font-serif);
+  font-size: 0.72rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+.weekly-distance-select:focus {
+  box-shadow: var(--glow-accent-sm);
+}
+
+.weekly-distance-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+}
+
+.weekly-distance-loading,
+.weekly-distance-empty {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.weekly-distance-error {
+  color: var(--color-danger);
+  font-size: 0.9rem;
+}
+
+.weekly-distance-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.weekly-distance-grid {
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 1;
+}
+
+.weekly-distance-axis-text {
+  fill: var(--color-text-muted);
+  font-size: 10px;
+  font-family: var(--font-serif);
+}
+
+.weekly-distance-line {
+  fill: none;
+  stroke: rgba(87, 154, 196, 1);
+  stroke-width: 2;
+}
+
+.weekly-distance-point {
+  fill: rgba(87, 154, 196, 1);
+}
