@@ -3,7 +3,7 @@ import { useState } from 'react'
 import LastActivityCard from '../../features/activities/LastActivityCard'
 import SyncButton from '../../features/activities/SyncButton'
 import '../../features/activities/activities.css'
-import WeeklyDistanceChart from '../../features/activities/WeeklyDistanceChart'
+import WeeklyDistanceChart from '../../features/chart/WeeklyDistanceChart'
 
 export default function Dashboard() {
   const [refreshKey, setRefreshKey] = useState(0)
