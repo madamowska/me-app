@@ -2,15 +2,16 @@
 import { useEffect, useState } from 'react'
 import Button from '../../components/ui/Button'
 import ActivityDetailsPopup from './ActivityDetailsPopup'
-import { getLastActivity } from './api'
+import { getLastActivities } from './api'
 import { formatDistanceKm, formatSpeed, formatDate } from './activityFormat'
 import './activities.css'
 
 export default function LastActivityCard({ refreshKey }) {
-  const [activity, setActivity] = useState(null)
+  const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [selectedActivity, setSelectedActivity] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -22,10 +23,10 @@ export default function LastActivityCard({ refreshKey }) {
           setError(null)
         }
 
-        const data = await getLastActivity()
-        if (!cancelled) setActivity(data)
+        const data = await getLastActivities()
+        if (!cancelled) setActivities(data)
       } catch (err) {
-        console.error('Failed to load last activity:', err)
+        console.error('Failed to load last activities:', err)
         if (!cancelled) setError(err.message)
       } finally {
         if (!cancelled) setLoading(false)
@@ -40,22 +41,27 @@ export default function LastActivityCard({ refreshKey }) {
     return <div className="last-activity-card">Loading...</div>
   }
 
-  if (error || !activity) {
+  if (error || activities.length === 0) {
     return (
       <div className="last-activity-card">
         <p className="last-activity-empty">
-          {error ? 'Could not load your last activity.' : 'Your last workout will appear here.'}
+          {error ? 'Could not load your activities.' : 'Your last workouts will appear here.'}
         </p>
       </div>
     )
   }
 
-  const isRunning = typeof activity?.activity_type === 'string' && activity.activity_type.toLowerCase().includes('running')
+  const isRunning = typeof activities[0]?.activity_type === 'string' && activities[0].activity_type.toLowerCase().includes('running')
+
+  const handleDetailsClick = (activity) => {
+    setSelectedActivity(activity)
+    setDetailsOpen(true)
+  }
 
   return (
     <>
       <div className="last-activity-card">
-        <h3 className="last-activity-title">Last Activity</h3>
+        <h3 className="last-activity-title">Last Activities</h3>
         <table className="last-activity-table">
           <thead>
             <tr>
@@ -67,17 +73,19 @@ export default function LastActivityCard({ refreshKey }) {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>{activity.activity_name || activity.activity_type || 'Activity'}</td>
-              <td>{formatDistanceKm(activity.distance_m)}</td>
-              <td>{formatSpeed(activity.activity_type, activity.avg_speed_mps)}</td>
-              <td>{formatDate(activity.start_time)}</td>
-              <td>
-                <Button variant="accent" onClick={() => setDetailsOpen(true)}>
-                  Details
-                </Button>
-              </td>
-            </tr>
+            {activities.map((activity, index) => (
+              <tr key={index}>
+                <td>{activity.activity_name || activity.activity_type || 'Activity'}</td>
+                <td>{formatDistanceKm(activity.distance_m)}</td>
+                <td>{formatSpeed(activity.activity_type, activity.avg_speed_mps)}</td>
+                <td>{formatDate(activity.start_time)}</td>
+                <td>
+                  <Button variant="accent" onClick={() => handleDetailsClick(activity)}>
+                    Details
+                  </Button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -85,7 +93,7 @@ export default function LastActivityCard({ refreshKey }) {
       <ActivityDetailsPopup
         isOpen={detailsOpen}
         onClose={() => setDetailsOpen(false)}
-        activity={activity}
+        activity={selectedActivity}
       />
     </>
   )

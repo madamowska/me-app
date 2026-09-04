@@ -35,6 +35,33 @@ router.get('/last-activity', async (req, res) => {
   }
 })
 
+router.get('/last-activities', async (req, res) => {
+  const profileId = process.env.GARMIN_PROFILE_ID
+  if (!profileId) {
+    return res.status(500).json({ error: 'GARMIN_PROFILE_ID not configured on server.' })
+  }
+
+  try {
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase
+      .from('activities')
+      .select(
+        'activity_name, activity_type, start_time, duration_seconds, distance_m, ' +
+        'avg_speed_mps, calories, avg_heart_rate, max_heart_rate'
+      )
+      .eq('profile_id', profileId)
+      .order('start_time', { ascending: false })
+      .limit(3)
+
+    if (error) throw error
+
+    res.json({ activities: data || [] })
+  } catch (err) {
+    console.error('Failed to fetch last activities:', err)
+    res.status(500).json({ error: 'Failed to fetch last activities.' })
+  }
+})
+
 router.post('/sync-activities', (req, res) => {
   if (syncInProgress) {
     return res.status(409).json({ success: false, error: 'A sync is already in progress.' })

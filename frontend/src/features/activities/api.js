@@ -11,6 +11,17 @@ export async function getLastActivity() {
   return data.activity ?? null
 }
 
+export async function getLastActivities() {
+  const response = await fetch('/api/last-activities')
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch last activities (${response.status})`)
+  }
+
+  const data = await response.json()
+  return data.activities ?? []
+}
+
 export async function triggerSync() {
   const response = await fetch('/api/sync-activities', { method: 'POST' })
 
