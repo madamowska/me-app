@@ -15,15 +15,17 @@ export default function SyncButton({ onSuccess }) {
   const [message, setMessage] = useState('')
   const transientTimer = useRef(null)
 
-  // Auto-hide the "Already up to date." message after 5 seconds
   useEffect(() => {
-    // Clear any existing timer when message changes
     if (transientTimer.current) {
       clearTimeout(transientTimer.current)
       transientTimer.current = null
     }
 
-    if (message === 'Already up to date.') {
+    // Treat both the exact "Already up to date." text and the "Synced N new activit..." messages as transient
+    const isSyncedMessage = typeof message === 'string' && /^Synced \d+ new activit/.test(message)
+    const isTransient = message === 'Already up to date.' || isSyncedMessage
+
+    if (isTransient) {
       transientTimer.current = setTimeout(() => {
         setMessage('')
         transientTimer.current = null
@@ -51,7 +53,6 @@ export default function SyncButton({ onSuccess }) {
           : 'Already up to date.'
       )
 
-      // notify parent that sync succeeded so it can refresh data
       if (typeof onSuccess === 'function') onSuccess(result)
     } catch (err) {
       setStatus(STATUS.ERROR)
@@ -59,7 +60,6 @@ export default function SyncButton({ onSuccess }) {
     }
   }
 
-  // Inline styles used to position the transient message centered under the button
   const wrapperStyle = { position: 'relative', display: 'inline-block' }
   const transientStyle = {
     position: 'absolute',
@@ -69,9 +69,9 @@ export default function SyncButton({ onSuccess }) {
     margin: 0,
   }
 
-  // Ensure the message never wraps; if it's the transient "Already up to date." message
-  // merge the transient positioning with nowrap. Other messages keep nowrap as well.
-  const messageStyle = message === 'Already up to date.'
+  const isSyncedMessage = typeof message === 'string' && /^Synced \d+ new activit/.test(message)
+  const isTransient = message === 'Already up to date.' || isSyncedMessage
+  const messageStyle = isTransient
     ? { ...transientStyle, whiteSpace: 'nowrap' }
     : { whiteSpace: 'nowrap' }
 
@@ -86,7 +86,6 @@ export default function SyncButton({ onSuccess }) {
       </Button>
 
       {message && (
-        // If the message is the "Already up to date." transient text, center it under the button
         <p
           className={`sync-message sync-message--${status}`}
           style={messageStyle}
