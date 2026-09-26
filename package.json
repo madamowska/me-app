@@ -15,7 +15,7 @@
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.8",
     "cors": "^2.8.5",
-    "docx": "^9.7.1",
+    "docx": "^9.7.2",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "openai": "^7.10.0",

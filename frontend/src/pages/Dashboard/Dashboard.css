@@ -16,9 +16,22 @@
 
 .workout-plan-button-wrap {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 0.75rem;
   width: calc(100% + 540px);
   margin-top: 2rem;
+}
+
+.workout-plan-message {
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.workout-plan-message--error {
+  color: var(--color-danger);
 }
 
 @media (max-width: 1200px) {
