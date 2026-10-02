@@ -20,10 +20,10 @@ def _safe_int(value):
     return int(value) if value is not None else None
 
 
-def _to_record(activity: dict, profile_id: str) -> dict:
+def _to_record(activity: dict, athlete_profile_id: str) -> dict:
     """Map a garminconnect activity dict to a public.activities row."""
     return {
-        'profile_id': profile_id,
+        'athlete_profile_id': athlete_profile_id,
         'garmin_activity_id': activity.get('activityId'),
         'activity_type': (activity.get('activityType') or {}).get('typeKey'),
         'activity_name': activity.get('activityName'),
@@ -73,8 +73,8 @@ def sync_activities(days: int | None = None) -> dict:
     """Returns a summary dict — useful both for CLI printing and for an API caller."""
     load_dotenv(dotenv_path=ENV_PATH)
 
-    profile_id = os.getenv('GARMIN_PROFILE_ID')
-    if not profile_id:
+    athlete_profile_id = os.getenv('GARMIN_PROFILE_ID')
+    if not athlete_profile_id:
         msg = f'GARMIN_PROFILE_ID not set. Checked: {ENV_PATH}'
         print(f'[config error] {msg}')
         return {'success': False, 'error': msg}
@@ -115,14 +115,14 @@ def sync_activities(days: int | None = None) -> dict:
 
     print(f'Fetched {len(activities)} activities. Upserting...')
 
-    records = [_to_record(a, profile_id) for a in activities]
+    records = [_to_record(a, athlete_profile_id) for a in activities]
     upserted = 0
 
     for batch in _chunks(records, BATCH_SIZE):
         try:
             result = (
                 supabase.table('activities')
-                .upsert(batch, on_conflict='profile_id,garmin_activity_id')
+                .upsert(batch, on_conflict='athlete_profile_id,garmin_activity_id')
                 .execute()
             )
             upserted += len(result.data or [])

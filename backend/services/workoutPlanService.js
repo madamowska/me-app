@@ -93,7 +93,7 @@ export async function generateWorkoutPlan({ profileId, preferences = {} } = {}) 
   const { data: activities, error } = await getSupabaseAdmin()
     .from('activities')
     .select(ACTIVITY_FIELDS)
-    .eq('profile_id', configuredProfileId)
+    .eq('athlete_profile_id', configuredProfileId)
     .order('start_time', { ascending: false })
     .limit(20)
 

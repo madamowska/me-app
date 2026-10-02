@@ -21,7 +21,7 @@ router.get('/last-activity', async (req, res) => {
         'activity_name, activity_type, start_time, duration_seconds, distance_m, ' +
         'avg_speed_mps, calories, avg_heart_rate, max_heart_rate'
       )
-      .eq('profile_id', profileId)
+      .eq('athlete_profile_id', profileId)
       .order('start_time', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -49,7 +49,7 @@ router.get('/last-activities', async (req, res) => {
         'activity_name, activity_type, start_time, duration_seconds, distance_m, ' +
         'avg_speed_mps, calories, avg_heart_rate, max_heart_rate'
       )
-      .eq('profile_id', profileId)
+      .eq('athlete_profile_id', profileId)
       .order('start_time', { ascending: false })
       .limit(3)
 
