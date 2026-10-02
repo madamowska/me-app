@@ -21,7 +21,6 @@ export default function SyncButton({ onSuccess }) {
       transientTimer.current = null
     }
 
-    // Treat both the exact "Already up to date." text and the "Synced N new activit..." messages as transient
     const isSyncedMessage = typeof message === 'string' && /^Synced \d+ new activit/.test(message)
     const isTransient = message === 'Already up to date.' || isSyncedMessage
 
