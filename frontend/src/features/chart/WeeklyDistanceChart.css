@@ -1,11 +1,12 @@
 .weekly-distance-chart {
-  /* keep the same frame size as before (desktop) */
   position: absolute;
   left: calc(100% + 20px);
   top: 0;
   width: 520px;
   max-width: 520px;
-  min-height: 140px;
+  height: var(--weekly-distance-height, auto);
+  display: flex;
+  flex-direction: column;
   background: transparent;
   box-shadow: none;
   padding: 0.75rem 1rem;
@@ -20,6 +21,7 @@
     margin-top: 12px;
     max-width: none;
     width: 100%;
+    height: auto;
   }
 }
 
@@ -57,9 +59,10 @@
 
 .weekly-distance-content {
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
-  min-height: 96px;
+  min-height: 0;
 }
 
 .weekly-distance-loading,
@@ -75,7 +78,8 @@
 
 .weekly-distance-svg {
   width: 100%;
-  height: auto;
+  height: 100%;
+  min-height: 0;
   display: block;
 }
 

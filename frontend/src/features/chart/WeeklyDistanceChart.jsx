@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import './WeeklyDistanceChart.css'
 
-export default function WeeklyDistanceChart({ weeks = 11, initialSport = 'running' }) {
+export default function WeeklyDistanceChart({ weeks = 11, initialSport = 'running', style }) {
   const [sport, setSport] = useState(initialSport)
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -90,7 +90,7 @@ export default function WeeklyDistanceChart({ weeks = 11, initialSport = 'runnin
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ')
 
   return (
-    <div className="weekly-distance-chart last-activity-card" aria-label="Weekly distance chart">
+    <div className="weekly-distance-chart last-activity-card" style={style} aria-label="Weekly distance chart">
       <div className="weekly-distance-header">
         <h4 className="weekly-distance-title">Weekly distance</h4>
         <select

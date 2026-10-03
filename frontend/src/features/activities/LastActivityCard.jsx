@@ -6,7 +6,7 @@ import { getLastActivities } from './api'
 import { formatDistanceKm, formatSpeed, formatDate } from './activityFormat'
 import './activities.css'
 
-export default function LastActivityCard({ refreshKey }) {
+export default function LastActivityCard({ refreshKey, cardRef }) {
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -38,12 +38,12 @@ export default function LastActivityCard({ refreshKey }) {
   }, [refreshKey])
 
   if (loading) {
-    return <div className="last-activity-card">Loading...</div>
+    return <div ref={cardRef} className="last-activity-card">Loading...</div>
   }
 
   if (error || activities.length === 0) {
     return (
-      <div className="last-activity-card">
+      <div ref={cardRef} className="last-activity-card">
         <p className="last-activity-empty">
           {error ? 'Could not load your activities.' : 'Your last workouts will appear here.'}
         </p>
@@ -60,7 +60,7 @@ export default function LastActivityCard({ refreshKey }) {
 
   return (
     <>
-      <div className="last-activity-card">
+      <div ref={cardRef} className="last-activity-card">
         <h3 className="last-activity-title">Last Activities</h3>
         <table className="last-activity-table">
           <thead>

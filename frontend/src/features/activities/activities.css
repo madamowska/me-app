@@ -58,6 +58,12 @@
   white-space: nowrap;
 }
 
+.last-activity-table td .btn {
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
 .last-activity-table td:first-child,
 .last-activity-table th:first-child {
   white-space: normal;
