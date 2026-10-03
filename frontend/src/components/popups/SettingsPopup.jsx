@@ -1,14 +1,12 @@
-// src/components/SettingsPopup.jsx
 import PopupShell from './PopupShell'
+import './SettingsPopup.css'
 
-export default function SettingsPopup({ isOpen, onClose }) {
-  if (!isOpen) return null
-
+export default function SettingsPopup({ onClose }) {
   return (
     <PopupShell title="settings" onClose={onClose}>
-      <div className="field">
-
-      </div>
+      <p className="settings-placeholder">
+        General settings will be available here.
+      </p>
     </PopupShell>
   )
 }
