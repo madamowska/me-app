@@ -5,6 +5,7 @@ import LastActivityCard from '../../features/activities/LastActivityCard'
 import SyncButton from '../../features/activities/SyncButton'
 import '../../features/activities/activities.css'
 import WeeklyDistanceChart from '../../features/chart/WeeklyDistanceChart'
+import DailyFeedback from '../../features/feedback/DailyFeedback'
 
 export default function Dashboard() {
   const [refreshKey, setRefreshKey] = useState(0)
@@ -12,6 +13,20 @@ export default function Dashboard() {
   const [planMessage, setPlanMessage] = useState('')
   const [planError, setPlanError] = useState(false)
   const planMessageTimer = useRef(null)
+  const activityCardRef = useRef(null)
+  const [activityCardHeight, setActivityCardHeight] = useState(null)
+
+  useEffect(() => {
+    const activityCard = activityCardRef.current
+    if (!activityCard) return undefined
+
+    const updateHeight = () => setActivityCardHeight(activityCard.getBoundingClientRect().height)
+    const resizeObserver = new ResizeObserver(updateHeight)
+    resizeObserver.observe(activityCard)
+    updateHeight()
+
+    return () => resizeObserver.disconnect()
+  }, [])
 
   useEffect(() => {
     if (planMessageTimer.current) {
@@ -89,11 +104,16 @@ export default function Dashboard() {
         style={{ position: 'relative' }}
       >
         <div>
-          <LastActivityCard refreshKey={refreshKey} />
+          <LastActivityCard refreshKey={refreshKey} cardRef={activityCardRef} />
           <SyncButton onSuccess={handleSyncSuccess} />
         </div>
 
-        <WeeklyDistanceChart weeks={10} />
+        <WeeklyDistanceChart
+          weeks={10}
+          style={activityCardHeight ? { '--weekly-distance-height': `${activityCardHeight}px` } : undefined}
+        />
+
+        <DailyFeedback />
 
         <div className="workout-plan-button-wrap">
           <Button
