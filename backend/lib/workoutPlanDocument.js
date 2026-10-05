@@ -6,6 +6,8 @@ import {
   TextRun,
 } from 'docx'
 
+const ACCENT_COLOR = '579AC4'
+
 function formatDate(date) {
   if (typeof date !== 'string') return ''
   const parsedDate = new Date(`${date}T00:00:00Z`)
@@ -32,7 +34,7 @@ function addTextList(paragraphs, heading, items) {
   if (entries.length === 0) return
 
   paragraphs.push(new Paragraph({
-    children: [new TextRun({ text: heading, bold: true })],
+    children: [new TextRun({ text: heading, bold: true, color: ACCENT_COLOR })],
     spacing: { before: 120, after: 40 },
   }))
 
@@ -48,7 +50,7 @@ function addTextList(paragraphs, heading, items) {
 export async function createWorkoutPlanDocx(plan) {
   const paragraphs = [
     new Paragraph({
-      text: 'Weekly Workout Plan',
+      children: [new TextRun({ text: 'Weekly Workout Plan', color: ACCENT_COLOR, bold: true })],
       heading: HeadingLevel.TITLE,
       spacing: { after: 120 },
     }),
@@ -71,13 +73,13 @@ export async function createWorkoutPlanDocx(plan) {
   plan.days.forEach((day) => {
     const dayTitle = [day.day, formatDate(day.date)].filter(Boolean).join(' — ')
     paragraphs.push(new Paragraph({
-      text: dayTitle,
+      children: [new TextRun({ text: dayTitle, color: ACCENT_COLOR, bold: true })],
       heading: HeadingLevel.HEADING_1,
       pageBreakBefore: false,
       spacing: { before: 240, after: 80 },
     }))
     paragraphs.push(new Paragraph({
-      text: asText(day.title),
+      children: [new TextRun({ text: asText(day.title), color: ACCENT_COLOR, bold: true })],
       heading: HeadingLevel.HEADING_2,
       spacing: { after: 100 },
     }))
@@ -91,7 +93,7 @@ export async function createWorkoutPlanDocx(plan) {
     details.forEach(([label, value]) => {
       paragraphs.push(new Paragraph({
         children: [
-          new TextRun({ text: `${label}: `, bold: true }),
+          new TextRun({ text: `${label}: `, bold: true, color: ACCENT_COLOR }),
           new TextRun(asText(value)),
         ],
         spacing: { after: 60 },

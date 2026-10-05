@@ -130,7 +130,7 @@ function validateProfile(body) {
   }
 
   if ('primary_activity' in body && body.primary_activity !== null &&
-      !['running', 'cycling', 'swimming', 'strength_training', 'climbing', 'hiking', 'walking']
+      !['running', 'cycling', 'swimming', 'strength_training', 'climbing', 'hiking', 'walking', 'stretching/yoga']
         .includes(body.primary_activity)) {
     return 'primary_activity must be one of the supported activities or null.'
   }
@@ -162,6 +162,7 @@ function validateProfile(body) {
       'climbing',
       'hiking',
       'walking',
+      'stretching/yoga',
     ])
     if (body.activities.some((activity) => !allowedActivities.has(activity)) ||
         new Set(body.activities).size !== body.activities.length) {

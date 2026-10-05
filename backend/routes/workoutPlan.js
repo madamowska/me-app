@@ -24,7 +24,9 @@ router.post('/workout-plan/generate', async (req, res) => {
     return res.send(document)
   } catch (error) {
     console.error('Failed to generate workout plan:', error)
-    return res.status(500).json({ error: 'Failed to generate workout plan.' })
+    return res
+      .status(error.statusCode || 500)
+      .json({ error: error.publicMessage || 'Failed to generate workout plan.' })
   }
 })
 
