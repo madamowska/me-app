@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Button from '../../components/ui/Button'
+import useTransientMessage from '../../hooks/useTransientMessage'
 import './InjuryHistory.css'
 
 const EMPTY_INJURY = {
@@ -112,7 +113,7 @@ export default function InjuryHistory() {
   const [editingInjuryId, setEditingInjuryId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  const [message, setMessage, showTransientMessage] = useTransientMessage()
   const [error, setError] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -146,7 +147,7 @@ export default function InjuryHistory() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [setMessage])
 
   function updateDraft(field, value) {
     setDraft((current) => ({ ...current, [field]: value }))
@@ -210,10 +211,10 @@ export default function InjuryHistory() {
       ].sort((first, second) => (second.started_on || '').localeCompare(first.started_on || '')))
       setDraft(EMPTY_INJURY)
       setEditingInjuryId(null)
-      setMessage(editingInjuryId ? 'Injury updated.' : 'Injury saved.')
+      showTransientMessage(editingInjuryId ? 'Injury updated.' : 'Injury saved.')
     } catch (saveError) {
       setError(true)
-      setMessage(saveError.message || 'Could not save injury.')
+      showTransientMessage(saveError.message || 'Could not save injury.')
     } finally {
       setSaving(false)
     }
@@ -234,11 +235,11 @@ export default function InjuryHistory() {
       }
 
       setInjuries((current) => current.filter((injury) => injury.id !== deleteTarget.id))
-      setMessage('Injury deleted.')
+      showTransientMessage('Injury deleted.')
       setDeleteTarget(null)
     } catch (deleteError) {
       setError(true)
-      setMessage(deleteError.message || 'Could not delete injury.')
+      showTransientMessage(deleteError.message || 'Could not delete injury.')
     } finally {
       setDeleting(false)
     }

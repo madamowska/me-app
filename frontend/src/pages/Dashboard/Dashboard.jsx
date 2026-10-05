@@ -6,13 +6,13 @@ import SyncButton from '../../features/activities/SyncButton'
 import '../../features/activities/activities.css'
 import WeeklyDistanceChart from '../../features/chart/WeeklyDistanceChart'
 import DailyFeedback from '../../features/feedback/DailyFeedback'
+import useTransientMessage from '../../hooks/useTransientMessage'
 
 export default function Dashboard() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [generatingPlan, setGeneratingPlan] = useState(false)
-  const [planMessage, setPlanMessage] = useState('')
+  const [planMessage, setPlanMessage, showTransientPlanMessage] = useTransientMessage()
   const [planError, setPlanError] = useState(false)
-  const planMessageTimer = useRef(null)
   const activityCardRef = useRef(null)
   const [activityCardHeight, setActivityCardHeight] = useState(null)
 
@@ -27,27 +27,6 @@ export default function Dashboard() {
 
     return () => resizeObserver.disconnect()
   }, [])
-
-  useEffect(() => {
-    if (planMessageTimer.current) {
-      clearTimeout(planMessageTimer.current)
-      planMessageTimer.current = null
-    }
-
-    if (planMessage === 'Your workout plan has been downloaded.') {
-      planMessageTimer.current = window.setTimeout(() => {
-        setPlanMessage('')
-        planMessageTimer.current = null
-      }, 5000)
-    }
-
-    return () => {
-      if (planMessageTimer.current) {
-        clearTimeout(planMessageTimer.current)
-        planMessageTimer.current = null
-      }
-    }
-  }, [planMessage])
 
   function handleSyncSuccess() {
     setRefreshKey((k) => k + 1)
@@ -79,19 +58,22 @@ export default function Dashboard() {
       const disposition = response.headers.get('Content-Disposition')
       const filename = disposition?.match(/filename="([^"]+)"/i)?.[1]
         || 'weekly-workout-plan.docx'
+      const docxFilename = filename.toLowerCase().endsWith('.docx')
+        ? filename
+        : `${filename}.docx`
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = filename
+      link.download = docxFilename
       document.body.appendChild(link)
       link.click()
       link.remove()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 
-      setPlanMessage('Your workout plan has been downloaded.')
+      showTransientPlanMessage('Your workout plan has been downloaded.')
     } catch (error) {
       setPlanError(true)
-      setPlanMessage(error.message || 'Could not generate the workout plan.')
+      showTransientPlanMessage(error.message || 'Could not generate the workout plan.')
     } finally {
       setGeneratingPlan(false)
     }

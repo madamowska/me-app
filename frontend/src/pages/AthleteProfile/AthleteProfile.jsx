@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Button from '../../components/ui/Button'
+import useTransientMessage from '../../hooks/useTransientMessage'
 import './AthleteProfile.css'
 
 const WEEKDAYS = [
@@ -20,6 +21,7 @@ const ACTIVITIES = [
   ['climbing', 'Climbing'],
   ['hiking', 'Hiking'],
   ['walking', 'Walking'],
+  ['stretching/yoga', 'Stretching/Yoga'],
 ]
 
 const EMPTY_PROFILE = {
@@ -72,7 +74,7 @@ export default function AthleteProfile() {
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  const [message, setMessage, showTransientMessage] = useTransientMessage()
   const [error, setError] = useState(false)
 
   useEffect(() => {
@@ -110,7 +112,7 @@ export default function AthleteProfile() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [setMessage])
 
   function updateDraft(field, value) {
     setDraft((current) => ({ ...current, [field]: value }))
@@ -179,10 +181,10 @@ export default function AthleteProfile() {
       setProfile(result.profile)
       setDraft(toDraft(result.profile))
       setEditing(false)
-      setMessage('Profile saved.')
+      showTransientMessage('Profile saved.')
     } catch (saveError) {
       setError(true)
-      setMessage(saveError.message || 'Could not save athlete profile.')
+      showTransientMessage(saveError.message || 'Could not save athlete profile.')
     } finally {
       setSaving(false)
     }

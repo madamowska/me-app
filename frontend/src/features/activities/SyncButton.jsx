@@ -1,6 +1,7 @@
 // src/features/activities/SyncButton.jsx
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import Button from '../../components/ui/Button'
+import useTransientMessage from '../../hooks/useTransientMessage'
 import { triggerSync } from './api'
 
 const STATUS = {
@@ -12,32 +13,7 @@ const STATUS = {
 
 export default function SyncButton({ onSuccess }) {
   const [status, setStatus] = useState(STATUS.IDLE)
-  const [message, setMessage] = useState('')
-  const transientTimer = useRef(null)
-
-  useEffect(() => {
-    if (transientTimer.current) {
-      clearTimeout(transientTimer.current)
-      transientTimer.current = null
-    }
-
-    const isSyncedMessage = typeof message === 'string' && /^Synced \d+ new activit/.test(message)
-    const isTransient = message === 'Already up to date.' || isSyncedMessage
-
-    if (isTransient) {
-      transientTimer.current = setTimeout(() => {
-        setMessage('')
-        transientTimer.current = null
-      }, 5000)
-    }
-
-    return () => {
-      if (transientTimer.current) {
-        clearTimeout(transientTimer.current)
-        transientTimer.current = null
-      }
-    }
-  }, [message])
+  const [message, setMessage, showTransientMessage] = useTransientMessage()
 
   async function handleSync() {
     setStatus(STATUS.SYNCING)
@@ -46,7 +22,7 @@ export default function SyncButton({ onSuccess }) {
     try {
       const result = await triggerSync()
       setStatus(STATUS.SUCCESS)
-      setMessage(
+      showTransientMessage(
         result.upserted > 0
           ? `Synced ${result.upserted} new activit${result.upserted === 1 ? 'y' : 'ies'}.`
           : 'Already up to date.'
@@ -55,7 +31,7 @@ export default function SyncButton({ onSuccess }) {
       if (typeof onSuccess === 'function') onSuccess(result)
     } catch (err) {
       setStatus(STATUS.ERROR)
-      setMessage(err.message || 'Sync failed.')
+      showTransientMessage(err.message || 'Sync failed.')
     }
   }
 
@@ -68,9 +44,7 @@ export default function SyncButton({ onSuccess }) {
     margin: 0,
   }
 
-  const isSyncedMessage = typeof message === 'string' && /^Synced \d+ new activit/.test(message)
-  const isTransient = message === 'Already up to date.' || isSyncedMessage
-  const messageStyle = isTransient
+  const messageStyle = status === STATUS.SUCCESS
     ? { ...transientStyle, whiteSpace: 'nowrap' }
     : { whiteSpace: 'nowrap' }
 

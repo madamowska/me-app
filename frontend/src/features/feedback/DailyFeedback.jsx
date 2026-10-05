@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Button from '../../components/ui/Button'
+import useTransientMessage from '../../hooks/useTransientMessage'
 
 function getLocalDate() {
   const now = new Date()
@@ -101,7 +102,7 @@ export default function DailyFeedback() {
   const [values, setValues] = useState(() => toFormValues(null))
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  const [message, setMessage, showTransientMessage] = useTransientMessage()
   const [error, setError] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [history, setHistory] = useState([])
@@ -110,29 +111,6 @@ export default function DailyFeedback() {
   const [editValues, setEditValues] = useState(() => toFormValues(null))
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
-  const messageTimer = useRef(null)
-
-  useEffect(() => {
-    if (messageTimer.current) {
-      clearTimeout(messageTimer.current)
-      messageTimer.current = null
-    }
-
-    if (message === 'Daily feedback saved.') {
-      messageTimer.current = window.setTimeout(() => {
-        setMessage('')
-        messageTimer.current = null
-      }, 5000)
-    }
-
-    return () => {
-      if (messageTimer.current) {
-        clearTimeout(messageTimer.current)
-        messageTimer.current = null
-      }
-    }
-  }, [message])
-
   useEffect(() => {
     let cancelled = false
 
@@ -164,7 +142,7 @@ export default function DailyFeedback() {
     return () => {
       cancelled = true
     }
-  }, [date])
+  }, [date, setMessage])
 
   useEffect(() => {
     if (!editingEntry && !deleteTarget) return undefined
@@ -208,7 +186,7 @@ export default function DailyFeedback() {
       setHistoryOpen(true)
     } catch (loadError) {
       setError(true)
-      setMessage(loadError.message || 'Could not load feedback history.')
+      showTransientMessage(loadError.message || 'Could not load feedback history.')
     } finally {
       setHistoryLoading(false)
     }
@@ -239,10 +217,10 @@ export default function DailyFeedback() {
         result.feedback,
         ...current.filter((entry) => entry.feedback_date !== date),
       ].sort((first, second) => second.feedback_date.localeCompare(first.feedback_date)))
-      setMessage('Daily feedback saved.')
+      showTransientMessage('Daily feedback saved.')
     } catch (saveError) {
       setError(true)
-      setMessage(saveError.message || 'Could not save daily feedback.')
+      showTransientMessage(saveError.message || 'Could not save daily feedback.')
     } finally {
       setSaving(false)
     }
@@ -280,10 +258,10 @@ export default function DailyFeedback() {
         entry.feedback_date === result.feedback.feedback_date ? result.feedback : entry
       )))
       setEditingEntry(null)
-      setMessage('Feedback updated.')
+      showTransientMessage('Feedback updated.')
     } catch (saveError) {
       setError(true)
-      setMessage(saveError.message || 'Could not update feedback.')
+      showTransientMessage(saveError.message || 'Could not update feedback.')
     } finally {
       setSaving(false)
     }
@@ -308,10 +286,10 @@ export default function DailyFeedback() {
       ))
       if (deleteTarget.feedback_date === date) setValues(toFormValues(null))
       setDeleteTarget(null)
-      setMessage('Feedback deleted.')
+      showTransientMessage('Feedback deleted.')
     } catch (deleteError) {
       setError(true)
-      setMessage(deleteError.message || 'Could not delete feedback.')
+      showTransientMessage(deleteError.message || 'Could not delete feedback.')
     } finally {
       setDeleting(false)
     }
