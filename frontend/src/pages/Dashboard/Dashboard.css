@@ -28,6 +28,12 @@
   background: var(--color-surface);
 }
 
+.daily-feedback--history-open {
+  max-height: 70vh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
 .daily-feedback-header h2 {
   color: var(--color-text);
   font-size: 0.95rem;

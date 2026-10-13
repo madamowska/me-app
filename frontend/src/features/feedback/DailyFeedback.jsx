@@ -298,7 +298,10 @@ export default function DailyFeedback() {
   const disabled = loading || saving
 
   return (
-    <section className="daily-feedback" aria-labelledby="daily-feedback-title">
+    <section
+      className={`daily-feedback${historyOpen ? ' daily-feedback--history-open' : ''}`}
+      aria-labelledby="daily-feedback-title"
+    >
       <div className="daily-feedback-header">
         <div>
           <h2 id="daily-feedback-title">How do you feel today?</h2>
