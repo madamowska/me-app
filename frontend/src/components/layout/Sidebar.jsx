@@ -9,6 +9,7 @@ export default function Sidebar({
   onAthleteProfileClick,
   onInjuryHistoryClick,
   onHomeClick,
+  onCreateNewClick,
 }) {
   useEffect(() => {
     function handleKey(e) {
@@ -48,6 +49,21 @@ export default function Sidebar({
               </svg>
             </span>
             <span>home</span>
+          </button>
+          <button
+            className="sidebar-nav-item"
+            onClick={() => {
+              onCreateNewClick()
+              onClose()
+            }}
+          >
+            <span className="sidebar-nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="3.5" y="4" width="17" height="16" rx="1.5" />
+                <path d="M7 16v-3M12 16V8M17 16v-5" />
+              </svg>
+            </span>
+            <span>dashboard</span>
           </button>
           <button
             className="sidebar-nav-item"

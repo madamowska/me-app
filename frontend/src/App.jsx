@@ -34,7 +34,8 @@ return (
       onSettingsClick={openSettings}
       onAthleteProfileClick={() => navigate('/athlete-profile')}
       onInjuryHistoryClick={() => navigate('/injury-history')}
-      onHomeClick={() => navigate('/dashboard')}
+      onHomeClick={() => navigate('/')}
+      onCreateNewClick={() => navigate('/dashboard')}
     />
 
     <Routes>
