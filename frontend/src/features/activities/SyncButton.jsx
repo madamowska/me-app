@@ -35,7 +35,13 @@ export default function SyncButton({ onSuccess }) {
     }
   }
 
-  const wrapperStyle = { position: 'relative', display: 'inline-block' }
+  const wrapperStyle = {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+  }
   const transientStyle = {
     position: 'absolute',
     left: '50%',
