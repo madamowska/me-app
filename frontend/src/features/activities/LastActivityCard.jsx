@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react'
 import Button from '../../components/ui/Button'
 import ActivityDetailsPopup from './ActivityDetailsPopup'
+import SyncButton from './SyncButton'
 import { getLastActivities } from './api'
 import { formatDistanceKm, formatSpeed, formatDate } from './activityFormat'
 import './activities.css'
 
-export default function LastActivityCard({ refreshKey, cardRef }) {
+export default function LastActivityCard({ refreshKey, cardRef, onSyncSuccess }) {
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -38,7 +39,12 @@ export default function LastActivityCard({ refreshKey, cardRef }) {
   }, [refreshKey])
 
   if (loading) {
-    return <div ref={cardRef} className="last-activity-card">Loading...</div>
+    return (
+      <div ref={cardRef} className="last-activity-card">
+        <p className="last-activity-empty">Loading...</p>
+        <SyncButton onSuccess={onSyncSuccess} />
+      </div>
+    )
   }
 
   if (error || activities.length === 0) {
@@ -47,6 +53,7 @@ export default function LastActivityCard({ refreshKey, cardRef }) {
         <p className="last-activity-empty">
           {error ? 'Could not load your activities.' : 'Your last workouts will appear here.'}
         </p>
+        <SyncButton onSuccess={onSyncSuccess} />
       </div>
     )
   }
@@ -88,6 +95,7 @@ export default function LastActivityCard({ refreshKey, cardRef }) {
             ))}
           </tbody>
         </table>
+        <SyncButton onSuccess={onSyncSuccess} />
       </div>
 
       <ActivityDetailsPopup

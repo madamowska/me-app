@@ -2,10 +2,10 @@ import './Dashboard.css'
 import { useEffect, useRef, useState } from 'react'
 import Button from '../../components/ui/Button'
 import LastActivityCard from '../../features/activities/LastActivityCard'
-import SyncButton from '../../features/activities/SyncButton'
 import '../../features/activities/activities.css'
 import WeeklyDistanceChart from '../../features/chart/WeeklyDistanceChart'
 import DailyFeedback from '../../features/feedback/DailyFeedback'
+import WeekSection from '../../features/week/WeekSection'
 import useTransientMessage from '../../hooks/useTransientMessage'
 
 export default function Dashboard() {
@@ -86,14 +86,19 @@ export default function Dashboard() {
         style={{ position: 'relative' }}
       >
         <div>
-          <LastActivityCard refreshKey={refreshKey} cardRef={activityCardRef} />
-          <SyncButton onSuccess={handleSyncSuccess} />
+          <LastActivityCard
+            refreshKey={refreshKey}
+            cardRef={activityCardRef}
+            onSyncSuccess={handleSyncSuccess}
+          />
         </div>
 
         <WeeklyDistanceChart
           weeks={10}
           style={activityCardHeight ? { '--weekly-distance-height': `${activityCardHeight}px` } : undefined}
         />
+
+        <WeekSection />
 
         <DailyFeedback />
 
