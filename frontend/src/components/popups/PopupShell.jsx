@@ -2,10 +2,10 @@
 import Button from '../ui/Button'
 import './Popup.css'
 
-export default function PopupShell({ title, onClose, children, actions }) {
+export default function PopupShell({ title, onClose, children, actions, contentClassName = '' }) {
   return (
     <div className="popup-overlay" onClick={onClose}>
-      <div className="popup-content" onClick={e => e.stopPropagation()}>
+      <div className={`popup-content${contentClassName ? ` ${contentClassName}` : ''}`} onClick={e => e.stopPropagation()}>
 
         <span className="popup-close">
           <Button variant="icon" onClick={onClose}>✕</Button>

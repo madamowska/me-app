@@ -30,7 +30,17 @@ function utcDateOffset(date, days) {
   return result.toISOString().slice(0, 10)
 }
 
-function upcomingWeek() {
+function upcomingWeek(weekStart) {
+  if (weekStart) {
+    const monday = new Date(`${weekStart}T00:00:00.000Z`)
+    const sunday = new Date(monday)
+    sunday.setUTCDate(monday.getUTCDate() + 6)
+    return {
+      start: weekStart,
+      end: sunday.toISOString().slice(0, 10),
+    }
+  }
+
   const today = new Date()
   const monday = new Date(today)
   const day = monday.getDay()
@@ -89,7 +99,7 @@ function buildPrompt({
   activities,
   preferences = {},
 }) {
-  return `Create a personalised workout plan for the upcoming week.
+  return `Create a personalised workout plan for the selected week.
 
 PLANNING PERIOD
 The plan must cover Monday ${week.start} through Sunday ${week.end}, inclusive.
@@ -245,6 +255,10 @@ Use exactly this JSON structure:
       "type": "activity name",
       "title": "short title",
       "duration": "time in minutes or hours",
+      "distanceKm": null,
+      "pace": "",
+      "speedKph": null,
+      "elevationGainM": null,
       "intensity": "easy|moderate|hard",
       "warmup": ["step"],
       "exercises": ["step"],
@@ -262,6 +276,9 @@ JSON REQUIREMENTS
 - "type" must be one of the activities specified in the athlete profile's activities array, or "rest" for a rest day.
 - "intensity" must be one of: "easy", "moderate", "hard".
 - "duration" must be a non-negative integer followed by "min" for minutes or "h" for hours.
+- "distanceKm" must be a non-negative number or null when distance does not apply or cannot be safely estimated.
+- "pace" must be a string, or an empty string when pace does not apply or cannot be safely estimated.
+- "speedKph" and "elevationGainM" must be non-negative numbers or null when they do not apply or cannot be safely estimated.
 - "warmup", "exercises", "cooldown", and "recoveryNotes" must be arrays of strings.
 - "notes" must be a string. If no notes are needed, use an empty string.
 - Do not add extra JSON fields.
@@ -307,11 +324,11 @@ Contains up to the latest 20 activities.
 ${JSON.stringify(activities, null, 2)}`
 }
 
-export async function generateWorkoutPlan({ profileId, preferences = {} } = {}) {
+export async function generateWorkoutPlan({ profileId, preferences = {}, weekStart } = {}) {
   const configuredProfileId = profileId || process.env.GARMIN_PROFILE_ID
   if (!configuredProfileId) throw new Error('A profile id is required to generate a workout plan.')
 
-  const { start, end } = upcomingWeek()
+  const { start, end } = upcomingWeek(weekStart)
   const today = new Date().toISOString().slice(0, 10)
   const feedbackStart = utcDateOffset(today, -29)
   const supabase = getSupabaseAdmin()

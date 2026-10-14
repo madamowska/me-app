@@ -6,6 +6,8 @@ import Home from './pages/Home/Home'
 import Dashboard from './pages/Dashboard/Dashboard'
 import AthleteProfile from './pages/AthleteProfile/AthleteProfile'
 import InjuryHistory from './pages/InjuryHistory/InjuryHistory'
+import Plan from './pages/Plan/Plan'
+import CreateWorkoutPlan from './pages/Plan/CreateWorkoutPlan'
 import HamburgerButton from './components/layout/HamburgerButton'
 import Sidebar from './components/layout/Sidebar'
 import SettingsPopup from './components/popups/SettingsPopup'
@@ -34,6 +36,7 @@ return (
       onSettingsClick={openSettings}
       onAthleteProfileClick={() => navigate('/athlete-profile')}
       onInjuryHistoryClick={() => navigate('/injury-history')}
+      onPlanClick={() => navigate('/plan')}
       onHomeClick={() => navigate('/')}
       onCreateNewClick={() => navigate('/dashboard')}
     />
@@ -43,6 +46,8 @@ return (
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/athlete-profile" element={<AthleteProfile />} />
       <Route path="/injury-history" element={<InjuryHistory />} />
+      <Route path="/plan" element={<Plan />} />
+      <Route path="/plan/create" element={<CreateWorkoutPlan />} />
     </Routes>
 
     {settingsOpen && (

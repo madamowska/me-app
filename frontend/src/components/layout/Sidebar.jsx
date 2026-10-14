@@ -8,6 +8,7 @@ export default function Sidebar({
   onSettingsClick,
   onAthleteProfileClick,
   onInjuryHistoryClick,
+  onPlanClick,
   onHomeClick,
   onCreateNewClick,
 }) {
@@ -64,6 +65,21 @@ export default function Sidebar({
               </svg>
             </span>
             <span>dashboard</span>
+          </button>
+          <button
+            className="sidebar-nav-item"
+            onClick={() => {
+              onPlanClick()
+              onClose()
+            }}
+          >
+            <span className="sidebar-nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M4 5.5h16M4 12h16M4 18.5h10" />
+                <circle cx="18" cy="18" r="3" />
+              </svg>
+            </span>
+            <span>plan</span>
           </button>
           <button
             className="sidebar-nav-item"

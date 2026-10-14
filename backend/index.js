@@ -6,7 +6,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import activitiesRouter from './routes/activities.js'
-import workoutPlanRouter from './routes/workoutPlan.js'
+import workoutPlansRouter, { workoutPlanExportRouter } from './routes/workoutPlans.js'
 import athleteDataRouter from './routes/athleteData.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -21,7 +21,8 @@ app.use(cors())
 app.use(express.json())
 
 app.use('/api', activitiesRouter)
-app.use('/api', workoutPlanRouter)
+app.use('/api', workoutPlanExportRouter)
+app.use('/api/workout-plans', workoutPlansRouter)
 app.use('/api', athleteDataRouter)
 
 app.listen(PORT, () => {

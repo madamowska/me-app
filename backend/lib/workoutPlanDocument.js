@@ -27,11 +27,14 @@ function asText(value) {
 }
 
 function addTextList(paragraphs, heading, items) {
-  const entries = Array.isArray(items)
+  const isList = Array.isArray(items)
+  const entries = isList
     ? items.map(asText).filter((item) => item.trim())
-    : []
+    : typeof items === 'string'
+      ? items.split(/\r?\n/)
+      : []
 
-  if (entries.length === 0) return
+  if (!entries.some((entry) => entry.trim())) return
 
   paragraphs.push(new Paragraph({
     children: [new TextRun({ text: heading, bold: true, color: ACCENT_COLOR })],
@@ -41,7 +44,7 @@ function addTextList(paragraphs, heading, items) {
   entries.forEach((entry) => {
     paragraphs.push(new Paragraph({
       text: entry,
-      bullet: { level: 0 },
+      ...(isList ? { bullet: { level: 0 } } : {}),
       spacing: { after: 40 },
     }))
   })

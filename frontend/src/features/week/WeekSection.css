@@ -27,6 +27,17 @@
   margin-top: 4px;
 }
 
+.week-status {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0 0 var(--space-sm);
+}
+
+.week-status--error {
+  color: var(--color-danger);
+}
+
 .week-days {
   display: grid;
   gap: var(--space-sm);
@@ -102,6 +113,14 @@
   color: var(--color-accent);
 }
 
+.week-workout-name small {
+  color: var(--color-text-muted);
+  display: block;
+  font-size: 0.62rem;
+  margin-top: 4px;
+  text-decoration: none;
+}
+
 .week-workout-name--done {
   color: var(--color-text-muted);
   text-decoration: line-through;
@@ -135,62 +154,13 @@
   opacity: 0.4;
 }
 
-.week-add-button.btn {
-  border-radius: var(--radius-sm);
-  font-size: 0.58rem;
-  letter-spacing: 0.02em;
-  padding: 4px 7px;
-  text-transform: none;
-}
-
-.week-workout-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.week-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  min-width: 0;
-}
-
-.week-form-field > span {
+.week-saving-label {
   color: var(--color-text-muted);
-  font-size: 0.68rem;
-  text-transform: uppercase;
+  font-size: 0.6rem;
 }
 
-.week-form-field input,
-.week-form-field select,
-.week-form-field textarea {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  font-family: var(--font-serif);
-  font-size: 0.85rem;
-  padding: var(--space-sm);
-  width: 100%;
-}
-
-.week-form-field input:focus,
-.week-form-field select:focus,
-.week-form-field textarea:focus {
-  border-color: var(--color-accent-border);
-  box-shadow: var(--glow-accent-sm);
-  outline: none;
-}
-
-.week-form-field textarea {
-  resize: vertical;
-}
-
-.week-form-metrics {
-  display: grid;
-  gap: var(--space-sm);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.week-detail-value {
+  white-space: pre-line;
 }
 
 @media (max-width: 760px) {
@@ -218,7 +188,4 @@
     min-height: 180px;
   }
 
-  .week-form-metrics {
-    grid-template-columns: 1fr;
-  }
 }
