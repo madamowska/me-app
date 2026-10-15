@@ -57,6 +57,25 @@ export async function updateWorkoutPlan(planId, updates) {
   return result.plan
 }
 
+export async function getWorkoutActivities(planId) {
+  const response = await fetch(`/api/workout-plans/${planId}/activities`)
+  const result = await readResponse(response, 'Could not load workout activities')
+  if (!Array.isArray(result.activities)) {
+    throw new Error('The server returned an invalid workout activity list.')
+  }
+  return result.activities
+}
+
+export async function saveWorkoutActivity(planId, date, activities) {
+  const response = await fetch(`/api/workout-plans/${planId}/activities/${date}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ activities }),
+  })
+  const result = await readResponse(response, 'Could not save workout activity')
+  return result.activity
+}
+
 export async function deleteWorkoutPlan(planId) {
   const response = await fetch(`/api/workout-plans/${planId}`, { method: 'DELETE' })
   return readResponse(response, 'Could not delete workout plan')

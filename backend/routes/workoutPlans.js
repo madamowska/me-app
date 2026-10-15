@@ -171,6 +171,11 @@ workoutPlanExportRouter.post('/workout-plan/generate', async (req, res) => {
 function handleDatabaseError(res, operation, error) {
   console.error(`${operation}:`, error)
   if (['42P01', '42703', '42883', 'PGRST204', 'PGRST205'].includes(error.code)) {
+    if (operation.toLowerCase().includes('workout activit')) {
+      return res.status(503).json({
+        error: 'Workout activity storage is unavailable. Apply the 20261015101100_create_workout_plan_activities.sql migration and try again.',
+      })
+    }
     return res.status(503).json({
       error: 'No workout plans available. Select a workout plan to display.',
     })
@@ -204,6 +209,108 @@ router.get('/current', async (req, res) => {
     return res.json({ plan: data || null })
   } catch (error) {
     return handleDatabaseError(res, 'Could not load the current workout plan', error)
+  }
+})
+
+router.get('/:planId/activities', async (req, res) => {
+  if (!UUID_PATTERN.test(req.params.planId)) {
+    return res.status(400).json({ error: 'planId must be a valid UUID.' })
+  }
+
+  try {
+    const supabase = getSupabaseAdmin()
+    const profileId = getAthleteProfileId()
+    const { data: plan, error: planError } = await supabase
+      .from('workout_plans')
+      .select('id')
+      .eq('id', req.params.planId)
+      .eq('athlete_profile_id', profileId)
+      .maybeSingle()
+    if (planError) return handleDatabaseError(res, 'Could not read workout plan', planError)
+    if (!plan) return res.status(404).json({ error: 'Workout plan was not found.' })
+
+    const { data, error } = await supabase
+      .from('workout_plan_activities')
+      .select('workout_date, workout_data, is_completed, completed_at')
+      .eq('plan_id', plan.id)
+      .eq('athlete_profile_id', profileId)
+      .order('workout_date', { ascending: true })
+    if (error) return handleDatabaseError(res, 'Could not load workout activities', error)
+    return res.json({ activities: data || [] })
+  } catch (error) {
+    return handleDatabaseError(res, 'Could not load workout activities', error)
+  }
+})
+
+router.put('/:planId/activities/:date', async (req, res) => {
+  if (!UUID_PATTERN.test(req.params.planId)) {
+    return res.status(400).json({ error: 'planId must be a valid UUID.' })
+  }
+  if (!validDate(req.params.date)) {
+    return res.status(400).json({ error: 'date must be a valid date in YYYY-MM-DD format.' })
+  }
+  if (!isRecord(req.body) ||
+      Object.keys(req.body).some((key) => key !== 'activities') ||
+      !Array.isArray(req.body.activities) ||
+      req.body.activities.length > 20 ||
+      req.body.activities.some((activity) => !isRecord(activity))) {
+    return res.status(400).json({ error: 'activities must be an array of at most 20 workout objects.' })
+  }
+
+  try {
+    const supabase = getSupabaseAdmin()
+    const profileId = getAthleteProfileId()
+    const { data: plan, error: planError } = await supabase
+      .from('workout_plans')
+      .select('id, week_start, plan_data')
+      .eq('id', req.params.planId)
+      .eq('athlete_profile_id', profileId)
+      .maybeSingle()
+    if (planError) return handleDatabaseError(res, 'Could not read workout plan', planError)
+    if (!plan) return res.status(404).json({ error: 'Workout plan was not found.' })
+
+    const planDays = plan.plan_data?.days
+    const original = Array.isArray(planDays)
+      ? planDays.find((day) => day.date === req.params.date)
+      : null
+    if (!original) return res.status(400).json({ error: 'The date is not part of this workout plan.' })
+
+    const activities = req.body.activities.map((activity) => ({
+      ...activity,
+      day: original.day,
+      date: req.params.date,
+    }))
+    for (const [index, activity] of activities.entries()) {
+      const planData = {
+        ...plan.plan_data,
+        days: planDays.map((day) => (
+          day.date === req.params.date ? activity : day
+        )),
+      }
+      const planErrorMessage = validatePlanData(planData, plan.week_start)
+      if (planErrorMessage) {
+        return res.status(400).json({ error: `Activity ${index + 1}: ${planErrorMessage}` })
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('workout_plan_activities')
+      .upsert({
+        plan_id: plan.id,
+        athlete_profile_id: profileId,
+        workout_date: req.params.date,
+        workout_data: { activities },
+        is_completed: activities.length > 0 && activities.every((activity) => activity.completed === true),
+        completed_at: activities.length > 0 && activities.every((activity) => activity.completed === true)
+          ? new Date().toISOString()
+          : null,
+      }, { onConflict: 'plan_id,workout_date' })
+      .select('workout_date, workout_data, is_completed, completed_at')
+      .single()
+    if (error) return handleDatabaseError(res, 'Could not save workout activity', error)
+    return res.json({ activity: data })
+  } catch (error) {
+    return handleDatabaseError(res, 'Could not save workout activity', error)
   }
 })
 

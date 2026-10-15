@@ -304,7 +304,7 @@ export default function DailyFeedback() {
     >
       <div className="daily-feedback-header">
         <div>
-          <h2 id="daily-feedback-title">How do you feel today?</h2>
+          <h2 id="daily-feedback-title">Daily Feedback</h2>
           <p>{formatDate(date)}</p>
         </div>
         <Button onClick={() => {

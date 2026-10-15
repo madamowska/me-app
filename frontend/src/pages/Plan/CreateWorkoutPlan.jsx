@@ -9,20 +9,10 @@ import {
   saveWorkoutPlan,
   updateWorkoutPlan,
 } from '../../features/plan/api'
+import { ACTIVITY_OPTIONS } from '../../features/plan/activityOptions'
 import './Plan.css'
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-const ACTIVITY_OPTIONS = [
-  ['rest', 'Rest'],
-  ['running', 'Running'],
-  ['cycling', 'Cycling'],
-  ['swimming', 'Swimming'],
-  ['strength_training', 'Strength training'],
-  ['climbing', 'Climbing'],
-  ['hiking', 'Hiking'],
-  ['walking', 'Walking'],
-  ['stretching/yoga', 'Stretching / yoga'],
-]
 
 const TITLE_SUGGESTIONS = {
   rest: 'Rest day',
