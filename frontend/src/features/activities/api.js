@@ -22,6 +22,18 @@ export async function getLastActivities() {
   return data.activities ?? []
 }
 
+export async function getWeeklyDistance({ sport, weeks }) {
+  const params = new URLSearchParams({ sport, weeks: String(weeks) })
+  const response = await fetch(`/api/weekly-distance?${params}`)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch weekly distance (${response.status})`)
+  }
+
+  const data = await response.json()
+  return data.weeks ?? []
+}
+
 export async function triggerSync() {
   const response = await fetch('/api/sync-activities', { method: 'POST' })
 

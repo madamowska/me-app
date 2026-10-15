@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabaseClient'
+import { getWeeklyDistance } from '../activities/api'
 import './WeeklyDistanceChart.css'
 
 export default function WeeklyDistanceChart({ weeks = 11, initialSport = 'running', style }) {
@@ -14,21 +14,8 @@ export default function WeeklyDistanceChart({ weeks = 11, initialSport = 'runnin
       setLoading(true)
       setError(null)
       try {
-        if (!supabase) {
-          throw new Error('Supabase is not configured. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in your .env file.')
-        }
-
-        const { data, error: rpcError } = await supabase.rpc('weekly_distance_wrapper', { sport, weeks })
-        if (rpcError) throw rpcError
-
-        console.debug('WeeklyDistanceChart rpc raw', { sport, weeks, raw: data })
-
-        console.debug('WeeklyDistanceChart env', {
-          SUPABASE_URL: import.meta.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL,
-          SUPABASE_PUBLISHABLE_KEY_MASKED: (import.meta.env.SUPABASE_PUBLISHABLE_KEY || '').replace(/.(?=.{4})/g, '*')
-        })
-
-        const mapped = (Array.isArray(data) ? data : []).map((r) => {
+        const weeklyData = await getWeeklyDistance({ sport, weeks })
+        const mapped = (Array.isArray(weeklyData) ? weeklyData : []).map((r) => {
           const weekStartRaw = r.week_start ?? r.weekStart ?? r.week ?? ''
           let weekStart = ''
           try {
@@ -53,8 +40,6 @@ export default function WeeklyDistanceChart({ weeks = 11, initialSport = 'runnin
         })
 
         if (!cancelled) setData(mapped)
-
-        console.debug('WeeklyDistanceChart mapped', { sport, weeks, mapped })
       } catch (err) {
         if (!cancelled) setError(err.message || String(err))
       } finally {
