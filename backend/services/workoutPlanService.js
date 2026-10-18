@@ -1,6 +1,7 @@
 import process from 'node:process'
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js'
 import { generateChatCompletion } from '../lib/aiClient.js'
+import { normalizeWorkoutPlan, validateWorkoutPlan } from '../../shared/workoutPlan.js'
 
 const ACTIVITY_FIELDS = [
   'activity_name',
@@ -75,20 +76,6 @@ function cleanModelJson(content) {
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/i, '')
     .trim()
-}
-
-function validatePlan(plan, week) {
-  if (!plan || !Array.isArray(plan.days) || plan.days.length !== 7) {
-    throw new Error('The AI response must contain exactly seven workout days.')
-  }
-
-  plan.days.forEach((day, index) => {
-    if (!day || typeof day !== 'object' || !day.day || !day.title || !day.type) {
-      throw new Error(`The AI response is missing required fields for day ${index + 1}.`)
-    }
-  })
-
-  return { ...plan, weekStart: week.start, weekEnd: week.end }
 }
 
 function buildPrompt({
@@ -216,16 +203,19 @@ For workout days:
 For rest days:
 - use "type": "rest",
 - use a short title such as "Rest day",
-- set durationMinutes to 0,
-- use empty arrays for warmup, exercises, and cooldown unless a very light recovery activity is explicitly appropriate and permitted.
+- set "durationMinutes" to 0,
+- set intensity to "easy",
+- use empty arrays for warmup, exercises, and cooldown.
 
 Do not prescribe exercises that belong to activities not permitted by the athlete profile.
 
 INTENSITY
-Use only:
+Set intensity to exactly one lowercase value:
 - "easy"
 - "moderate"
 - "hard"
+
+Do not use synonyms, explanations, capitalization, or additional text in the intensity field.
 
 Use "hard" sparingly and only when supported by the athlete's recent training history, goals, and recovery status.
 
@@ -254,7 +244,7 @@ Use exactly this JSON structure:
       "date": "YYYY-MM-DD",
       "type": "activity name",
       "title": "short title",
-      "duration": "time in minutes or hours",
+      "durationMinutes": 40,
       "distanceKm": null,
       "pace": "",
       "speedKph": null,
@@ -275,7 +265,7 @@ JSON REQUIREMENTS
 - Each date must be a valid ISO date in YYYY-MM-DD format.
 - "type" must be one of the activities specified in the athlete profile's activities array, or "rest" for a rest day.
 - "intensity" must be one of: "easy", "moderate", "hard".
-- "duration" must be a non-negative integer followed by "min" for minutes or "h" for hours.
+- "durationMinutes" must be a non-negative integer; use 0 for rest days.
 - "distanceKm" must be a non-negative number or null when distance does not apply or cannot be safely estimated.
 - "pace" must be a string, or an empty string when pace does not apply or cannot be safely estimated.
 - "speedKph" and "elevationGainM" must be non-negative numbers or null when they do not apply or cannot be safely estimated.
@@ -395,8 +385,28 @@ export async function generateWorkoutPlan({ profileId, preferences = {}, weekSta
   try {
     parsedPlan = JSON.parse(cleanModelJson(rawPlan))
   } catch {
-    throw new Error('LM Studio returned invalid JSON for the workout plan.')
+    const error = new Error('LM Studio returned invalid JSON for the workout plan.')
+    error.statusCode = 502
+    error.publicMessage = error.message
+    throw error
   }
 
-  return validatePlan(parsedPlan, { start, end })
+  let planData
+  try {
+    planData = normalizeWorkoutPlan(parsedPlan)
+  } catch (normalizationError) {
+    const error = new Error(`LM Studio returned an invalid workout plan: ${normalizationError.message}`)
+    error.statusCode = 502
+    error.publicMessage = error.message
+    throw error
+  }
+  const validationError = validateWorkoutPlan(planData, start)
+  if (validationError) {
+    const error = new Error(`LM Studio returned an invalid workout plan: ${validationError}`)
+    error.statusCode = 502
+    error.publicMessage = error.message
+    throw error
+  }
+
+  return { ...planData, weekStart: start, weekEnd: end }
 }

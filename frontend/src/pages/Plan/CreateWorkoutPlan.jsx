@@ -10,6 +10,7 @@ import {
   updateWorkoutPlan,
 } from '../../features/plan/api'
 import { ACTIVITY_OPTIONS } from '../../features/plan/activityOptions'
+import { normalizeWorkoutPlan } from '../../../../shared/workoutPlan.js'
 import './Plan.css'
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -118,27 +119,29 @@ function makeEmptyPlan(weekStart) {
       pace: '',
       speedKph: '',
       elevationGainM: null,
-      completed: false,
     })),
   }
 }
 
-function normalizeGeneratedPlan(plan, preserveCompleted = false) {
+function normalizeGeneratedPlan(plan) {
+  const canonicalPlan = normalizeWorkoutPlan(plan)
   return {
-    summary: plan.summary || '',
-    recoveryNotes: Array.isArray(plan.recoveryNotes) ? plan.recoveryNotes : [],
-    days: plan.days.map((day) => ({
-      ...day,
-      warmup: Array.isArray(day.warmup) ? day.warmup.join('\n') : day.warmup || '',
-      exercises: Array.isArray(day.exercises) ? day.exercises.join('\n') : day.exercises || '',
-      cooldown: Array.isArray(day.cooldown) ? day.cooldown.join('\n') : day.cooldown || '',
-      distanceKm: typeof day.distanceKm === 'number' ? day.distanceKm.toFixed(2) : '',
-      pace: typeof day.pace === 'string' ? normalizePace(day.pace) ?? day.pace : '',
-      speedKph: typeof day.speedKph === 'number' ? day.speedKph.toFixed(2) : '',
-      duration: normalizeDuration(day.duration) || '',
-      elevationGainM: typeof day.elevationGainM === 'number' ? day.elevationGainM : null,
-      completed: preserveCompleted && day.completed === true,
-    })),
+    summary: canonicalPlan.summary,
+    recoveryNotes: canonicalPlan.recoveryNotes,
+    days: canonicalPlan.days.map((day) => {
+      const { durationMinutes, ...editableDay } = day
+      return {
+        ...editableDay,
+        duration: durationMinutes == null ? '' : formatTotalMinutes(durationMinutes),
+        warmup: day.warmup.join('\n'),
+        exercises: day.exercises.join('\n'),
+        cooldown: day.cooldown.join('\n'),
+        distanceKm: typeof day.distanceKm === 'number' ? day.distanceKm.toFixed(2) : '',
+        pace: typeof day.pace === 'string' ? normalizePace(day.pace) ?? day.pace : '',
+        speedKph: typeof day.speedKph === 'number' ? day.speedKph.toFixed(2) : '',
+        elevationGainM: typeof day.elevationGainM === 'number' ? day.elevationGainM : null,
+      }
+    }),
   }
 }
 
@@ -169,6 +172,14 @@ function normalizeDuration(value) {
   const match = duration.match(/^(\d+):(\d{1,2})$/)
   if (!match || Number(match[2]) > 59) return null
   return `${Number(match[1])}:${match[2].padStart(2, '0')}`
+}
+
+function durationToMinutes(value, type) {
+  const normalized = normalizeDuration(value)
+  if (normalized === null) return null
+  if (!normalized) return type === 'rest' ? 0 : null
+  const [hours, minutes] = normalized.split(':').map(Number)
+  return hours * 60 + minutes
 }
 
 function normalizePace(value) {
@@ -277,6 +288,9 @@ function PlanDayEditor({ day, index, onChange }) {
       type,
       title: !day.title.trim() || day.title === previousSuggestion ? nextSuggestion : day.title,
       duration: day.type === 'rest' || type === 'rest' ? '' : day.duration,
+      warmup: type === 'rest' ? '' : day.warmup,
+      exercises: type === 'rest' ? '' : day.exercises,
+      cooldown: type === 'rest' ? '' : day.cooldown,
       distanceKm: '',
       pace: '',
       speedKph: '',
@@ -367,7 +381,7 @@ export default function CreateWorkoutPlan() {
   const [title, setTitle] = useState('')
   const [draft, setDraft] = useState(() => makeEmptyPlan(initialWeek))
   const [loadingPlan, setLoadingPlan] = useState(Boolean(searchParams.get('planId')))
-  const [generating, setGenerating] = useState(false)
+  const [generating, setGenerating] = useState(() => searchParams.get('mode') === 'generate')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [message, setMessage] = useState('')
@@ -387,10 +401,7 @@ export default function CreateWorkoutPlan() {
         if (cancelled) return
         setTitle(plan.title)
         setWeekStart(plan.week_start)
-        setDraft(normalizeGeneratedPlan({
-          ...plan.plan_data,
-          weekStart: plan.week_start,
-        }, true))
+        setDraft(normalizeGeneratedPlan(plan.plan_data))
       })
       .catch((error) => {
         if (cancelled) return
@@ -453,13 +464,6 @@ export default function CreateWorkoutPlan() {
     event.preventDefault()
     const days = []
     for (const [index, day] of draft.days.entries()) {
-      const duration = normalizeDuration(day.duration)
-      if (duration === null) {
-        setMessage(`${day.day}: enter duration as H:MM, such as 1:30.`)
-        setIsError(true)
-        return
-      }
-
       const pace = normalizePace(day.pace)
       if (pace === null) {
         setMessage(`${day.day}: enter pace as M:SS, such as 5:30.`)
@@ -467,7 +471,26 @@ export default function CreateWorkoutPlan() {
         return
       }
 
-      const normalizedDay = { ...day, duration, pace }
+      const durationMinutes = durationToMinutes(day.duration, day.type)
+      if (durationMinutes === null) {
+        setMessage(`${day.day}: enter duration as H:MM, such as 1:30.`)
+        setIsError(true)
+        return
+      }
+
+      const normalizedDay = {
+        day: day.day,
+        date: day.date,
+        type: day.type,
+        title: day.title.trim(),
+        durationMinutes,
+        intensity: day.intensity,
+        warmup: linesToArray(day.warmup),
+        exercises: linesToArray(day.exercises),
+        cooldown: linesToArray(day.cooldown),
+        notes: day.notes,
+        pace,
+      }
       for (const field of ['distanceKm', 'speedKph']) {
         const value = day[field]
         if (value === '' || value === null || value === undefined) {
@@ -483,6 +506,7 @@ export default function CreateWorkoutPlan() {
           return
         }
       }
+      normalizedDay.elevationGainM = day.elevationGainM == null ? null : Number(day.elevationGainM)
       days[index] = normalizedDay
     }
 
@@ -491,7 +515,7 @@ export default function CreateWorkoutPlan() {
     setIsError(false)
     try {
       const planTitle = title.trim() || `Workout plan · ${weekStart}`
-      const planData = { ...draft, days }
+      const planData = normalizeWorkoutPlan({ ...draft, days })
       if (editPlanId) {
         await updateWorkoutPlan(editPlanId, { title: planTitle, weekStart, planData })
       } else {
@@ -532,6 +556,13 @@ export default function CreateWorkoutPlan() {
           </div>
         </header>
 
+        {generating ? (
+          <section className="plan-generation-loading" role="status" aria-live="polite">
+            <span className="plan-generation-spinner" aria-hidden="true" />
+            <h2>Creating your workout plan</h2>
+            <p>LM Studio is building a personalised training week. This may take a few moments.</p>
+          </section>
+        ) : (
         <form className="plan-create-form" onSubmit={handleSave} aria-busy={loadingPlan}>
           {loadingPlan && <p className="saved-plans-empty" role="status">Loading workout plan…</p>}
           <div className="plan-metadata">
@@ -616,6 +647,7 @@ export default function CreateWorkoutPlan() {
             </Button>
           </div>
         </form>
+        )}
       </div>
     </main>
   )

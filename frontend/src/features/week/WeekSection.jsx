@@ -50,7 +50,7 @@ function hasPlannedWorkout(workout) {
   return Boolean(
     workout.type?.trim()
     || workout.title?.trim()
-    || workout.duration?.trim()
+    || (workout.durationMinutes != null && workout.durationMinutes > 0)
     || workout.pace?.trim()
     || workout.warmup?.length
     || workout.exercises?.length
@@ -81,13 +81,16 @@ function formatWorkoutText(value) {
 }
 
 function formatDuration(value) {
-  if (typeof value !== 'string' || !value.trim()) return ''
-  const legacy = value.match(/^(\d+)\s*(min|h)$/i)
-  if (!legacy) return value
-  const amount = Number(legacy[1])
-  if (!Number.isSafeInteger(amount)) return value
-  if (legacy[2].toLowerCase() === 'h') return `${amount}:00`
-  return `${Math.floor(amount / 60)}:${String(amount % 60).padStart(2, '0')}`
+  if (!Number.isSafeInteger(value) || value < 0) return ''
+  return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`
+}
+
+function durationToMinutes(value, type) {
+  const normalized = typeof value === 'string' ? value.trim() : ''
+  if (!normalized) return type === 'rest' ? 0 : null
+  const match = normalized.match(/^(\d+):([0-5]\d)$/)
+  if (!match) return null
+  return Number(match[1]) * 60 + Number(match[2])
 }
 
 function formatPace(value) {
@@ -104,7 +107,7 @@ function getWeekCardSummary(workout) {
   const activity = workout.type?.toLowerCase().replaceAll('_', ' ').trim()
   const metric = DISTANCE_ACTIVITIES.has(activity)
     ? workout.distanceKm == null ? '' : `${Number(workout.distanceKm).toFixed(2)} km`
-    : formatDuration(workout.duration)
+    : formatDuration(workout.durationMinutes)
   return [metric, workout.intensity].filter(Boolean).join(' · ')
 }
 
@@ -114,7 +117,7 @@ function createEmptyActivity(day) {
     date: day.key,
     type: '',
     title: '',
-    duration: '',
+    durationMinutes: null,
     intensity: '',
     warmup: [],
     exercises: [],
@@ -143,7 +146,7 @@ function toEditValues(workout) {
   return {
     title: workout.title || '',
     type: workout.type || '',
-    duration: formatDuration(workout.duration),
+    duration: workout.durationMinutes == null ? '' : formatDuration(workout.durationMinutes),
     intensity: workout.intensity || '',
     distanceKm: workout.distanceKm == null ? '' : String(workout.distanceKm),
     pace: workout.pace || '',
@@ -159,19 +162,20 @@ function toEditValues(workout) {
 function fromEditValues(values, workout) {
   const numberOrNull = (value) => value.trim() === '' ? null : Number(value)
   const linesToArray = (value) => value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  const isRestDay = values.type === 'rest'
   return {
     ...workout,
     title: values.title.trim(),
     type: values.type.trim(),
-    duration: values.duration.trim(),
+    durationMinutes: isRestDay ? 0 : durationToMinutes(values.duration, values.type),
     intensity: values.intensity,
     distanceKm: numberOrNull(values.distanceKm),
     pace: values.pace.trim(),
     speedKph: numberOrNull(values.speedKph),
     elevationGainM: numberOrNull(values.elevationGainM),
-    warmup: linesToArray(values.warmup),
-    exercises: linesToArray(values.exercises),
-    cooldown: linesToArray(values.cooldown),
+    warmup: isRestDay ? [] : linesToArray(values.warmup),
+    exercises: isRestDay ? [] : linesToArray(values.exercises),
+    cooldown: isRestDay ? [] : linesToArray(values.cooldown),
     notes: values.notes,
   }
 }
@@ -203,7 +207,7 @@ function WorkoutDetails({
   const details = [
     ['Activity', workout.title, false],
     ['Type', workout.type?.replaceAll('_', ' '), false],
-    ['Duration', formatDuration(workout.duration), false],
+    ['Duration', formatDuration(workout.durationMinutes), false],
     ['Intensity', workout.intensity, false],
     ['Distance', workout.distanceKm == null ? '' : `${Number(workout.distanceKm).toFixed(2)} km`, false],
     ['Pace', formatPace(workout.pace), false],

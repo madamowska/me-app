@@ -139,6 +139,50 @@
   color: var(--color-danger);
 }
 
+.plan-generation-loading {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  justify-content: center;
+  margin: 0 auto;
+  min-height: 300px;
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.plan-generation-loading h2 {
+  font-size: 1.1rem;
+  font-weight: normal;
+  margin: var(--space-sm) 0 0;
+}
+
+.plan-generation-loading p {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 420px;
+}
+
+.plan-generation-spinner {
+  animation: plan-generation-spin 0.9s linear infinite;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  border-top-color: var(--color-accent);
+  height: 34px;
+  width: 34px;
+}
+
+@keyframes plan-generation-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .plan-create-menu {
   bottom: 28px;
   position: fixed;

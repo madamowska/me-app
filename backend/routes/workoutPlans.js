@@ -3,29 +3,16 @@ import process from 'node:process'
 import { generateWorkoutPlan } from '../services/workoutPlanService.js'
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js'
 import { createWorkoutPlanDocx } from '../lib/workoutPlanDocument.js'
+import {
+  normalizeWorkoutDay,
+  normalizeWorkoutPlan,
+  validateWorkoutPlan,
+} from '../../shared/workoutPlan.js'
 
 const router = Router()
 export const workoutPlanExportRouter = Router()
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-const DAY_FIELDS = new Set([
-  'day',
-  'date',
-  'type',
-  'title',
-  'duration',
-  'intensity',
-  'warmup',
-  'exercises',
-  'cooldown',
-  'notes',
-  'distanceKm',
-  'pace',
-  'speedKph',
-  'elevationGainM',
-  'completed',
-])
 
 function getAthleteProfileId() {
   const profileId = process.env.GARMIN_PROFILE_ID
@@ -66,80 +53,31 @@ function validateString(value, field, maxLength, { required = false } = {}) {
   return null
 }
 
-function validateStringArray(value, field) {
-  if (!Array.isArray(value) || value.length > 40 ||
-      value.some((item) => typeof item !== 'string' || !item.trim() || item.length > 500)) {
-    return `${field} must be an array of at most 40 non-empty strings, each at most 500 characters.`
-  }
-  return null
+function validatePlanData(planData, weekStart) {
+  return validateWorkoutPlan(planData, weekStart)
 }
 
-function validatePlanData(planData, weekStart) {
-  if (!isRecord(planData)) return 'planData must be a JSON object.'
-  if (Object.keys(planData).some((key) => !['summary', 'days', 'recoveryNotes'].includes(key))) {
-    return 'planData contains an unsupported field.'
-  }
-  if (typeof planData.summary !== 'string' || planData.summary.length > 4000) {
-    return 'planData.summary must be a string of at most 4000 characters.'
-  }
-  const recoveryError = validateStringArray(planData.recoveryNotes, 'planData.recoveryNotes')
-  if (recoveryError) return recoveryError
-  if (!Array.isArray(planData.days) || planData.days.length !== 7) {
-    return 'planData.days must contain exactly seven days.'
-  }
+function canonicalPlanRecord(plan) {
+  return { ...plan, plan_data: normalizeWorkoutPlan(plan.plan_data) }
+}
 
-  const expectedDate = new Date(`${weekStart}T00:00:00.000Z`)
-  for (const [index, day] of planData.days.entries()) {
-    if (!isRecord(day)) return `Day ${index + 1} must be a JSON object.`
-    if (Object.keys(day).some((key) => !DAY_FIELDS.has(key))) {
-      return `Day ${index + 1} contains an unsupported field.`
-    }
-    const date = expectedDate.toISOString().slice(0, 10)
-    if (day.day !== DAY_NAMES[index] || day.date !== date) {
-      return 'Plan days must run Monday to Sunday and match the selected week.'
-    }
-    for (const [field, limit] of [['type', 60], ['title', 160], ['duration', 30], ['intensity', 20], ['notes', 24000]]) {
-      const error = validateString(day[field], `Day ${index + 1} ${field}`, limit)
-      if (error) return error
-    }
-    if (day.duration !== '' && !/^(?:\d+( min| h)|\d+:\d{2})$/.test(day.duration)) {
-      return `Day ${index + 1} duration must use H:MM or a legacy minute/hour format.`
-    }
-    if (/^\d+:\d{2}$/.test(day.duration) && Number(day.duration.split(':')[1]) > 59) {
-      return `Day ${index + 1} duration minutes must be between 00 and 59.`
-    }
-    if (day.intensity !== '' && !['easy', 'moderate', 'hard'].includes(day.intensity)) {
-      return `Day ${index + 1} intensity must be easy, moderate, or hard.`
-    }
-    for (const field of ['warmup', 'exercises', 'cooldown']) {
-      if (typeof day[field] === 'string') {
-        if (day[field].length > 40000) {
-          return `Day ${index + 1} ${field} must be at most 40000 characters.`
-        }
-      } else {
-        const error = validateStringArray(day[field], `Day ${index + 1} ${field}`)
-        if (error) return error
-      }
-    }
-    if ('distanceKm' in day && day.distanceKm !== null &&
-        (typeof day.distanceKm !== 'number' || !Number.isFinite(day.distanceKm) || day.distanceKm < 0)) {
-      return `Day ${index + 1} distanceKm must be a non-negative number or null.`
-    }
-    if ('pace' in day && (typeof day.pace !== 'string' || day.pace.length > 80)) {
-      return `Day ${index + 1} pace must be a string of at most 80 characters.`
-    }
-    for (const field of ['speedKph', 'elevationGainM']) {
-      if (field in day && day[field] !== null &&
-          (typeof day[field] !== 'number' || !Number.isFinite(day[field]) || day[field] < 0)) {
-        return `Day ${index + 1} ${field} must be a non-negative number or null.`
-      }
-    }
-    if ('completed' in day && typeof day.completed !== 'boolean') {
-      return `Day ${index + 1} completed must be a boolean.`
-    }
-    expectedDate.setUTCDate(expectedDate.getUTCDate() + 1)
-  }
-  return null
+function canonicalActivityRecord(record, planData) {
+  const day = planData.days.find((entry) => entry.date === record.workout_date)
+  if (!day) throw new Error('Saved workout activity is outside its workout plan.')
+  const stored = record.workout_data
+  const entries = Array.isArray(stored?.activities)
+    ? stored.activities
+    : isRecord(stored)
+      ? [stored]
+      : []
+  const activities = entries.map((entry) => normalizeWorkoutDay({
+    ...entry,
+    day: day.day,
+    date: day.date,
+    completed: entry.completed ?? record.is_completed,
+  }, { includeCompleted: true }))
+
+  return { ...record, workout_data: { activities } }
 }
 
 workoutPlanExportRouter.post('/workout-plan/generate', async (req, res) => {
@@ -191,7 +129,7 @@ router.get('/', async (req, res) => {
       .eq('athlete_profile_id', getAthleteProfileId())
       .order('created_at', { ascending: false })
     if (error) return handleDatabaseError(res, 'Could not load workout plans', error)
-    return res.json({ plans: data || [] })
+    return res.json({ plans: (data || []).map(canonicalPlanRecord) })
   } catch (error) {
     return handleDatabaseError(res, 'Could not load workout plans', error)
   }
@@ -206,7 +144,7 @@ router.get('/current', async (req, res) => {
       .eq('is_current', true)
       .maybeSingle()
     if (error) return handleDatabaseError(res, 'Could not load the current workout plan', error)
-    return res.json({ plan: data || null })
+    return res.json({ plan: data ? canonicalPlanRecord(data) : null })
   } catch (error) {
     return handleDatabaseError(res, 'Could not load the current workout plan', error)
   }
@@ -222,7 +160,7 @@ router.get('/:planId/activities', async (req, res) => {
     const profileId = getAthleteProfileId()
     const { data: plan, error: planError } = await supabase
       .from('workout_plans')
-      .select('id')
+      .select('id, plan_data')
       .eq('id', req.params.planId)
       .eq('athlete_profile_id', profileId)
       .maybeSingle()
@@ -236,7 +174,10 @@ router.get('/:planId/activities', async (req, res) => {
       .eq('athlete_profile_id', profileId)
       .order('workout_date', { ascending: true })
     if (error) return handleDatabaseError(res, 'Could not load workout activities', error)
-    return res.json({ activities: data || [] })
+    const planData = normalizeWorkoutPlan(plan.plan_data)
+    return res.json({
+      activities: (data || []).map((record) => canonicalActivityRecord(record, planData)),
+    })
   } catch (error) {
     return handleDatabaseError(res, 'Could not load workout activities', error)
   }
@@ -269,27 +210,30 @@ router.put('/:planId/activities/:date', async (req, res) => {
     if (planError) return handleDatabaseError(res, 'Could not read workout plan', planError)
     if (!plan) return res.status(404).json({ error: 'Workout plan was not found.' })
 
-    const planDays = plan.plan_data?.days
+    const normalizedPlan = normalizeWorkoutPlan(plan.plan_data)
+    const planDays = normalizedPlan.days
     const original = Array.isArray(planDays)
       ? planDays.find((day) => day.date === req.params.date)
       : null
     if (!original) return res.status(400).json({ error: 'The date is not part of this workout plan.' })
 
-    const activities = req.body.activities.map((activity) => ({
-      ...activity,
-      day: original.day,
-      date: req.params.date,
-    }))
+    let activities
+    try {
+      activities = req.body.activities.map((activity) => normalizeWorkoutDay({
+        ...activity,
+        day: original.day,
+        date: req.params.date,
+      }, { includeCompleted: true }))
+    } catch (error) {
+      return res.status(400).json({ error: error.message })
+    }
     for (const [index, activity] of activities.entries()) {
-      const planData = {
-        ...plan.plan_data,
-        days: planDays.map((day) => (
-          day.date === req.params.date ? activity : day
-        )),
+      if (activity.notes.length > 24000 || activity.title.length > 160 || activity.pace.length > 80) {
+        return res.status(400).json({ error: `Activity ${index + 1} contains a field that is too long.` })
       }
-      const planErrorMessage = validatePlanData(planData, plan.week_start)
-      if (planErrorMessage) {
-        return res.status(400).json({ error: `Activity ${index + 1}: ${planErrorMessage}` })
+      if (activity.type === 'rest' &&
+          (activity.durationMinutes !== 0 || activity.warmup.length || activity.exercises.length || activity.cooldown.length)) {
+        return res.status(400).json({ error: `Activity ${index + 1}: rest days must have zero duration and no workout steps.` })
       }
     }
 
@@ -308,7 +252,7 @@ router.put('/:planId/activities/:date', async (req, res) => {
       .select('workout_date, workout_data, is_completed, completed_at')
       .single()
     if (error) return handleDatabaseError(res, 'Could not save workout activity', error)
-    return res.json({ activity: data })
+    return res.json({ activity: canonicalActivityRecord(data, normalizedPlan) })
   } catch (error) {
     return handleDatabaseError(res, 'Could not save workout activity', error)
   }
@@ -354,6 +298,7 @@ router.post('/', async (req, res) => {
   if (dateError) return res.status(400).json({ error: dateError })
   const planError = validatePlanData(planData, weekStart)
   if (planError) return res.status(400).json({ error: planError })
+  const canonicalPlanData = normalizeWorkoutPlan(planData)
 
   try {
     const { data, error } = await getSupabaseAdmin()
@@ -363,7 +308,7 @@ router.post('/', async (req, res) => {
         title: title.trim(),
         week_start: weekStart,
         week_end: weekEndFor(weekStart),
-        plan_data: planData,
+        plan_data: canonicalPlanData,
       })
       .select('id, title, week_start, week_end, plan_data, is_current, created_at, updated_at')
       .single()
@@ -403,7 +348,7 @@ router.put('/:planId/current', async (req, res) => {
       .eq('id', selectedPlan.id)
       .single()
     if (fetchError) return handleDatabaseError(res, 'Could not reload current workout plan', fetchError)
-    return res.json({ plan: data })
+    return res.json({ plan: canonicalPlanRecord(data) })
   } catch (error) {
     return handleDatabaseError(res, 'Could not set current workout plan', error)
   }
@@ -453,7 +398,7 @@ router.patch('/:planId', async (req, res) => {
       const targetWeekStart = req.body.weekStart || existingWeekStart
       const planError = validatePlanData(req.body.planData, targetWeekStart)
       if (planError) return res.status(400).json({ error: planError })
-      updates.plan_data = req.body.planData
+      updates.plan_data = normalizeWorkoutPlan(req.body.planData)
     }
 
     const { data, error } = await getSupabaseAdmin()
@@ -465,7 +410,7 @@ router.patch('/:planId', async (req, res) => {
       .maybeSingle()
     if (error) return handleDatabaseError(res, 'Could not update workout plan', error)
     if (!data) return res.status(404).json({ error: 'Workout plan was not found.' })
-    return res.json({ plan: data })
+    return res.json({ plan: canonicalPlanRecord(data) })
   } catch (error) {
     return handleDatabaseError(res, 'Could not update workout plan', error)
   }
