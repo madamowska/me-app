@@ -84,7 +84,6 @@ function buildPrompt({
   injuries,
   feedback,
   activities,
-  preferences = {},
 }) {
   return `Create a personalised workout plan for the selected week.
 
@@ -108,25 +107,20 @@ PLANNING PRIORITIES
 Apply these rules in this order:
 
 1. Safety and injury constraints
-2. Athlete's explicitly stated goals
+2. Athlete's goals and description
 3. Available training days and permitted activities
 4. Recent training volume, frequency, and progression
 5. Recovery status from recent feedback
 6. General workout variety and optimisation
 
-ATHLETE GOALS
+ATHLETE GOALS AND DESCRIPTION
 The athlete's stated goals are the primary basis for selecting workout types, session structure, intensity, duration, and progression.
+Consider athlete's routines, preferences, and constraints as described in the profile description.
 
-Identify the primary activity from the athlete profile. Build the week primarily around that activity. Complementary training may be included only when:
-- it is permitted by the athlete profile,
-- it supports the stated goals, and
-- it does not conflict with injury or recovery constraints.
-
-ACTIVITY RESTRICTIONS
+ACTIVITIES
 Only schedule activities explicitly listed in activities in the athlete profile's activities section.
-When permitted, "stretching/yoga" may be used as the workout type for a gentle stretching or yoga session.
-
 Never introduce a different sport, training modality, or exercise category simply because it would normally be useful.
+Activities should support the stated goals, and not conflict with injury or recovery constraints.
 
 AVAILABLE TRAINING DAYS
 Respect the training days specified in the athlete profile.
@@ -209,17 +203,21 @@ For rest days:
 
 Do not prescribe exercises that belong to activities not permitted by the athlete profile.
 
+PACE
+When pace applies, output only a pace string in M:SS format, such as "6:00".
+The minutes portion must be a whole number and the seconds portion must always have
+exactly two digits from "00" through "59". Do not include units, words, ranges, or
+explanations in the pace value. For example, output "6:00", not "6 min/km" or
+"6:00 min/km". If pace does not apply or cannot be estimated safely, use null.
+Before returning, verify that every non-null pace matches ^\\d+:[0-5]\\d$.
+
 INTENSITY
-Set intensity to exactly one lowercase value:
-- "easy"
-- "moderate"
-- "hard"
+For EACH of the seven days, output the intensity as exactly one
+of these JSON string values, matching spelling and lowercase exactly:
+"easy" or "moderate" or "hard".
 
-Do not use synonyms, explanations, capitalization, or additional text in the intensity field.
-
-Use "hard" sparingly and only when supported by the athlete's recent training history, goals, and recovery status.
-
-If recovery is poor or training history is insufficient, prefer easy or moderate sessions.
+This is mandatory even for rest days (use "easy"). Never output null, an empty string,
+"easy|moderate|hard", a synonym, a capitalized value, a range, a number, or an explanation.
 
 DATE AND DAY CONSISTENCY
 Each entry must contain the correct date corresponding to its day name.
@@ -239,21 +237,21 @@ Use exactly this JSON structure:
 {
   "summary": "brief explanation of the overall week's plan and the main factors that influenced it",
   "days": [
-    {
+        {
       "day": "Monday",
-      "date": "YYYY-MM-DD",
-      "type": "activity name",
-      "title": "short title",
-      "durationMinutes": 40,
+      "date": "2026-10-19",
+      "type": "rest",
+      "title": "Rest day",
+      "durationMinutes": 0,
       "distanceKm": null,
-      "pace": "",
+      "pace": null,
       "speedKph": null,
       "elevationGainM": null,
-      "intensity": "easy|moderate|hard",
-      "warmup": ["step"],
-      "exercises": ["step"],
-      "cooldown": ["step"],
-      "notes": "optional guidance"
+      "intensity": "easy",
+      "warmup": [],
+      "exercises": [],
+      "cooldown": [],
+      "notes": null
     }
   ],
   "recoveryNotes": ["guidance"]
@@ -264,18 +262,23 @@ JSON REQUIREMENTS
 - The days must be in Monday-to-Sunday order.
 - Each date must be a valid ISO date in YYYY-MM-DD format.
 - "type" must be one of the activities specified in the athlete profile's activities array, or "rest" for a rest day.
-- "intensity" must be one of: "easy", "moderate", "hard".
-- "durationMinutes" must be a non-negative integer; use 0 for rest days.
+- Every day's "intensity" must be exactly one of: "easy", "moderate", "hard".
+- For rest days use "type": "rest", intensity "easy" and all other fields null.
+- "durationMinutes" must be a non-negative integer, may be null when duration cannot be safely estimated. Use 0 for rest days.
 - "distanceKm" must be a non-negative number or null when distance does not apply or cannot be safely estimated.
-- "pace" must be a string, or an empty string when pace does not apply or cannot be safely estimated.
-- "speedKph" and "elevationGainM" must be non-negative numbers or null when they do not apply or cannot be safely estimated.
-- "warmup", "exercises", "cooldown", and "recoveryNotes" must be arrays of strings.
-- "notes" must be a string. If no notes are needed, use an empty string.
+- "pace" must be null when it does not apply or cannot be estimated safely. Otherwise, it must
+  match M:SS exactly (for example, "6:00"), with two seconds digits from "00" through "59".
+  Never include pace units such as "min/km" or "min/100m" in the value.
+- "speedKph" must be non-negative numbers or null when they do not apply or cannot be safely estimated.
+- "warmup", "exercises", "cooldown", and "recoveryNotes" may be null or arrays of strings.
+- "title", "notes", and "summary" may be null when unavailable; otherwise they must be strings.
+- Optional workout fields may be null when their value is unknown or does not apply. Do not invent a value to avoid null.
+- "day", "date", "type", and "intensity" are required and must not be null.
 - Do not add extra JSON fields.
 - Do not omit required fields.
 - Escape quotation marks and special characters correctly so the result is valid JSON.
 - Never return trailing commas.
-- Never include null values unless explicitly required by the schema.
+- Null values are allowed for optional fields as specified above.
 
 Before returning the JSON, internally verify:
 1. There are exactly 7 days.
@@ -286,7 +289,8 @@ Before returning the JSON, internally verify:
 6. The workload is consistent with recent training.
 7. Recovery signals have been incorporated.
 8. No information has been invented.
-9. The output is valid JSON and contains no text outside the JSON object.
+9. Every intensity value exactly matches "easy", "moderate", or "hard".
+10. The output is valid JSON and contains no text outside the JSON object.
 
 ATHLETE PROFILE
 The date of birth is represented as age to avoid sharing the exact date.
@@ -303,18 +307,13 @@ Contains up to the last 30 days. An empty array means no feedback is recorded.
 
 ${JSON.stringify(feedback, null, 2)}
 
-ADDITIONAL USER PREFERENCES
-An empty object means no additional preferences are recorded.
-
-${JSON.stringify(preferences, null, 2)}
-
 RECENT ACTIVITIES
 Contains up to the latest 20 activities.
 
 ${JSON.stringify(activities, null, 2)}`
 }
 
-export async function generateWorkoutPlan({ profileId, preferences = {}, weekStart } = {}) {
+export async function generateWorkoutPlan({ profileId, weekStart } = {}) {
   const configuredProfileId = profileId || process.env.GARMIN_PROFILE_ID
   if (!configuredProfileId) throw new Error('A profile id is required to generate a workout plan.')
 
@@ -378,7 +377,6 @@ export async function generateWorkoutPlan({ profileId, preferences = {}, weekSta
     injuries: injuries || [],
     feedback: feedback || [],
     activities: activities || [],
-    preferences,
   }))
 
   let parsedPlan
@@ -393,7 +391,7 @@ export async function generateWorkoutPlan({ profileId, preferences = {}, weekSta
 
   let planData
   try {
-    planData = normalizeWorkoutPlan(parsedPlan)
+    planData = normalizeWorkoutPlan(parsedPlan, { stripUnsupportedFields: true })
   } catch (normalizationError) {
     const error = new Error(`LM Studio returned an invalid workout plan: ${normalizationError.message}`)
     error.statusCode = 502

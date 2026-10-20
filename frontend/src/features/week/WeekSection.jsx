@@ -118,7 +118,7 @@ function createEmptyActivity(day) {
     type: '',
     title: '',
     durationMinutes: null,
-    intensity: '',
+    intensity: 'easy',
     warmup: [],
     exercises: [],
     cooldown: [],
@@ -147,7 +147,7 @@ function toEditValues(workout) {
     title: workout.title || '',
     type: workout.type || '',
     duration: workout.durationMinutes == null ? '' : formatDuration(workout.durationMinutes),
-    intensity: workout.intensity || '',
+    intensity: workout.intensity || 'easy',
     distanceKm: workout.distanceKm == null ? '' : String(workout.distanceKm),
     pace: workout.pace || '',
     speedKph: workout.speedKph == null ? '' : String(workout.speedKph),
@@ -283,11 +283,10 @@ function WorkoutDetails({
           <label className="week-edit-field">
             <span>Intensity</span>
             <select
-              value={editValues.intensity}
+              value={editValues.intensity || 'easy'}
               onChange={(event) => onChange('intensity', event.target.value)}
               disabled={disabled}
             >
-              <option value="">—</option>
               <option value="easy">Easy</option>
               <option value="moderate">Moderate</option>
               <option value="hard">Hard</option>

@@ -65,25 +65,11 @@ function normalizeActivityType(value) {
 }
 
 function normalizeIntensity(value) {
-  if (value == null) return ''
-  if (typeof value !== 'string') {
-    throw new Error('Workout intensity must be easy, moderate, hard, or empty.')
+  if (value == null || value === '') return 'easy'
+  if (value !== 'easy' && value !== 'moderate' && value !== 'hard') {
+    throw new Error('Workout intensity must be exactly easy, moderate, or hard.')
   }
-
-  const intensity = value.trim().toLowerCase()
-  const aliases = {
-    low: 'easy',
-    light: 'easy',
-    recovery: 'easy',
-    medium: 'moderate',
-    moderate: 'moderate',
-    high: 'hard',
-  }
-  const normalized = aliases[intensity] || intensity
-  if (!['', 'easy', 'moderate', 'hard'].includes(normalized)) {
-    throw new Error('Workout intensity must be easy, moderate, hard, or empty.')
-  }
-  return normalized
+  return value
 }
 
 function durationFromLegacy(value) {
@@ -129,68 +115,78 @@ function normalizeMetric(value, field) {
   return value
 }
 
-export function normalizeWorkoutDay(day, { includeCompleted = false } = {}) {
+export function normalizeWorkoutDay(
+  day,
+  { includeCompleted = false, stripUnsupportedFields = false } = {},
+) {
   if (!isRecord(day)) throw new Error('Each workout day must be an object.')
-  if (Object.keys(day).some((field) => !DAY_FIELDS.has(field))) {
+  const input = stripUnsupportedFields
+    ? Object.fromEntries(Object.entries(day).filter(([field]) => DAY_FIELDS.has(field)))
+    : day
+  if (Object.keys(input).some((field) => !DAY_FIELDS.has(field))) {
     throw new Error('Workout day contains an unsupported field.')
   }
 
-  const type = normalizeActivityType(day.type)
-  const title = typeof day.title === 'string' ? day.title.trim() : ''
-  const intensity = normalizeIntensity(day.intensity)
-  const notes = day.notes ?? ''
-  const pace = day.pace ?? ''
+  const type = normalizeActivityType(input.type)
+  const title = typeof input.title === 'string' ? input.title.trim() : ''
+  const intensity = type === 'rest' ? 'easy' : normalizeIntensity(input.intensity)
+  const notes = input.notes ?? ''
+  const pace = input.pace ?? ''
+
   if (typeof notes !== 'string' || typeof pace !== 'string') {
     throw new Error('Workout notes and pace must be strings.')
   }
 
   const normalized = {
-    day: day.day,
-    date: day.date,
+    day: input.day,
+    date: input.date,
     type,
     title,
-    durationMinutes: normalizeDurationMinutes(day),
+    durationMinutes: normalizeDurationMinutes(input),
     intensity,
-    warmup: normalizeStringArray(day.warmup, 'warmup'),
-    exercises: normalizeStringArray(day.exercises, 'exercises'),
-    cooldown: normalizeStringArray(day.cooldown, 'cooldown'),
+    warmup: normalizeStringArray(input.warmup, 'warmup'),
+    exercises: normalizeStringArray(input.exercises, 'exercises'),
+    cooldown: normalizeStringArray(input.cooldown, 'cooldown'),
     notes,
-    distanceKm: normalizeMetric(day.distanceKm, 'distanceKm'),
+    distanceKm: normalizeMetric(input.distanceKm, 'distanceKm'),
     pace: pace.trim(),
-    speedKph: normalizeMetric(day.speedKph, 'speedKph'),
-    elevationGainM: normalizeMetric(day.elevationGainM, 'elevationGainM'),
+    speedKph: normalizeMetric(input.speedKph, 'speedKph'),
+    elevationGainM: normalizeMetric(input.elevationGainM, 'elevationGainM'),
   }
 
   if (typeof normalized.day !== 'string' || typeof normalized.date !== 'string') {
     throw new Error('Workout day and date are required strings.')
   }
-  if (includeCompleted && day.completed !== undefined) {
-    if (typeof day.completed !== 'boolean') throw new Error('completed must be a boolean.')
-    normalized.completed = day.completed
+  if (includeCompleted && input.completed !== undefined) {
+    if (typeof input.completed !== 'boolean') throw new Error('completed must be a boolean.')
+    normalized.completed = input.completed
   }
 
   return normalized
 }
 
-export function normalizeWorkoutPlan(plan) {
+export function normalizeWorkoutPlan(plan, { stripUnsupportedFields = false } = {}) {
   if (!isRecord(plan)) throw new Error('Workout plan must be an object.')
-  if (Object.keys(plan).some((field) => !PLAN_FIELDS.has(field))) {
+  const input = stripUnsupportedFields
+    ? Object.fromEntries(Object.entries(plan).filter(([field]) => PLAN_FIELDS.has(field)))
+    : plan
+  if (Object.keys(input).some((field) => !PLAN_FIELDS.has(field))) {
     throw new Error('Workout plan contains an unsupported field.')
   }
-  if (!Array.isArray(plan.days) || plan.days.length !== 7) {
+  if (!Array.isArray(input.days) || input.days.length !== 7) {
     throw new Error('Workout plan must contain exactly seven days.')
   }
-  if (plan.summary !== undefined && typeof plan.summary !== 'string') {
+  if (input.summary != null && typeof input.summary !== 'string') {
     throw new Error('Workout plan summary must be a string.')
   }
-  if (plan.recoveryNotes !== undefined && !Array.isArray(plan.recoveryNotes)) {
+  if (input.recoveryNotes != null && !Array.isArray(input.recoveryNotes)) {
     throw new Error('Workout plan recoveryNotes must be an array of strings.')
   }
-  const recoveryNotes = normalizeStringArray(plan.recoveryNotes, 'recoveryNotes')
+  const recoveryNotes = normalizeStringArray(input.recoveryNotes, 'recoveryNotes')
 
   return {
-    summary: (plan.summary || '').trim(),
-    days: plan.days.map((day) => normalizeWorkoutDay(day)),
+    summary: (input.summary ?? '').trim(),
+    days: input.days.map((day) => normalizeWorkoutDay(day, { stripUnsupportedFields })),
     recoveryNotes,
   }
 }
@@ -222,14 +218,12 @@ export function validateWorkoutPlan(plan, weekStart) {
     if (day.day !== WORKOUT_DAY_NAMES[index] || day.date !== date) {
       return 'Plan days must run Monday to Sunday and match the selected week.'
     }
-    if (!day.title || day.title.length > 160) return `Day ${index + 1} title is required and must be at most 160 characters.`
+    if (day.title.length > 160) return `Day ${index + 1} title must be at most 160 characters.`
     if (day.notes.length > 24000 || day.pace.length > 80) return `Day ${index + 1} notes or pace are too long.`
-    if (day.durationMinutes === null && day.type !== 'rest') {
-      return `Day ${index + 1} durationMinutes is required for a workout.`
-    }
     if (day.type === 'rest' &&
-        (day.durationMinutes !== 0 || day.warmup.length || day.exercises.length || day.cooldown.length)) {
-      return `Day ${index + 1} rest days must have zero duration and no workout steps.`
+        ((day.durationMinutes !== null && day.durationMinutes !== 0)
+          || day.warmup.length || day.exercises.length || day.cooldown.length)) {
+      return `Day ${index + 1} rest days must have null or zero duration and no workout steps.`
     }
     expectedDate.setUTCDate(expectedDate.getUTCDate() + 1)
   }

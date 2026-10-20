@@ -21,11 +21,11 @@ export async function getCurrentWorkoutPlan() {
   return result.plan ?? null
 }
 
-export async function generateWorkoutPlan({ weekStart, preferences = {} }) {
+export async function generateWorkoutPlan({ weekStart }) {
   const response = await fetch('/api/workout-plans/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ weekStart, preferences }),
+    body: JSON.stringify({ weekStart }),
   })
   const result = await readResponse(response, 'Could not generate a workout plan')
   return result.plan

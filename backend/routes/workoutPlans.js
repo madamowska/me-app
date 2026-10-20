@@ -81,14 +81,8 @@ function canonicalActivityRecord(record, planData) {
 }
 
 workoutPlanExportRouter.post('/workout-plan/generate', async (req, res) => {
-  const preferences = req.body?.preferences ?? {}
-
-  if (typeof preferences !== 'object' || preferences === null || Array.isArray(preferences)) {
-    return res.status(400).json({ error: 'preferences must be a JSON object.' })
-  }
-
   try {
-    const plan = await generateWorkoutPlan({ preferences })
+    const plan = await generateWorkoutPlan()
     const document = await createWorkoutPlanDocx(plan)
     const filename = `workout-plan-${plan.weekStart}.docx`
 
@@ -259,17 +253,13 @@ router.put('/:planId/activities/:date', async (req, res) => {
 })
 
 router.post('/generate', async (req, res) => {
-  const { weekStart, preferences = {} } = req.body || {}
+  const { weekStart } = req.body || {}
   const dateError = validateWeekStart(weekStart)
   if (dateError) return res.status(400).json({ error: dateError })
-  if (!isRecord(preferences)) {
-    return res.status(400).json({ error: 'preferences must be a JSON object.' })
-  }
 
   try {
     const plan = await generateWorkoutPlan({
       profileId: getAthleteProfileId(),
-      preferences,
       weekStart,
     })
     const planData = {

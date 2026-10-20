@@ -219,7 +219,6 @@ function MetricField({ day, parameter, onChange }) {
       <label className="plan-field">
         <span>{parameter.label}</span>
         <select value={day.intensity} onChange={(event) => onChange(event.target.value)}>
-          <option value="">—</option>
           <option value="easy">Easy</option>
           <option value="moderate">Moderate</option>
           <option value="hard">Hard</option>
@@ -472,7 +471,7 @@ export default function CreateWorkoutPlan() {
       }
 
       const durationMinutes = durationToMinutes(day.duration, day.type)
-      if (durationMinutes === null) {
+      if (durationMinutes === null && day.duration.trim() !== '') {
         setMessage(`${day.day}: enter duration as H:MM, such as 1:30.`)
         setIsError(true)
         return
